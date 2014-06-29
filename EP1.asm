@@ -108,10 +108,9 @@ read_file:
 	li   $a1, 0     	# parâmetro para abrir para leitura (0: leitura, 1: escrita)
 	syscall         	# syscall: abre arquivo e armazena em $v0 o descritor de arquivo
 	
-	bltz $v0, exit_error
-	
 	slt  $t0, $v0, $zero	# testa se é menor que zero. se sim, houve erro.
 	beq  $t0, 1, exit_error
+	
 	add  $t0, $v0, $zero 	# salva descritor de arquivo
 	
 	addi $t2, $zero, 1	# inicializa contador
@@ -142,6 +141,8 @@ read:
 	add  $a1, $t1, $zero   	# carrega endereço inicial de onde serão guardados os bytes lidos
 	lw   $a2, min_size     	# carrega limite máximo de leitura por iteração
 	syscall             	# syscall: lê no máx. $a2 bytes do arquivo e armazena em $v0 a qtde de bytes lidas de fato
+
+	bltz $v0, exit_error
 
 	slt  $t3, $v0, $a2	# testa se o número de bytes lido é menor que o limite por iteração 
 	beq  $t3, 1, close_file # se leu menos, fecha o arquivo e salva dados lidos
