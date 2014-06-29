@@ -11,12 +11,12 @@ int_array_ended:	# msg para print - facilita debug
 	.asciiz "Fim do array de inteiros\n"
 int_readed:
 	.asciiz "Número de inteiros convertidos: "
+exit_error_msg:
+	.asciiz "Um erro ocorreu. Terminando o programa"
 file_name_input:
 	.asciiz "Digite o nome do seu arquivo: "
 file: 			# nome do arquivo que será colocado pelo usuário
 	.ascii ""	
-fin:                	# arquivo para entrada
-    	.asciiz "testin.txt"
 array:
 	.align 2
 	.space 1024
@@ -39,6 +39,12 @@ exit:
     	li $v0,10       #fim
 	syscall
 
+exit_error:
+# Exibe msg de erro e termina o programa
+	la $a0, exit_error_msg
+	li $v0, 4
+	syscall
+	j exit	
 get_file_name:
 # Retorna em $v0 o endereço para o nome do arquivo. Usa do dialog para input
 	li $v0, 54 		# carrega chamada de sistema para mostrar um dialog para input de string
@@ -101,6 +107,11 @@ read_file:
 	# É esperado que $a0 contenha o endereço para o nome do arquivo
 	li   $a1, 0     	# parâmetro para abrir para leitura (0: leitura, 1: escrita)
 	syscall         	# syscall: abre arquivo e armazena em $v0 o descritor de arquivo
+	
+	bltz $v0, exit_error
+	
+	slt  $t0, $v0, $zero	# testa se é menor que zero. se sim, houve erro.
+	beq  $t0, 1, exit_error
 	add  $t0, $v0, $zero 	# salva descritor de arquivo
 	
 	addi $t2, $zero, 1	# inicializa contador
