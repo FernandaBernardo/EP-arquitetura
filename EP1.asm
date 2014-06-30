@@ -12,11 +12,11 @@ int_array_ended:	# msg para print - facilita debug
 int_readed:
 	.asciiz "Número de inteiros convertidos: "
 exit_error_msg:
-	.asciiz "Um erro ocorreu. Terminando o programa"
-file_name_input:
+	.asciiz "Um erro ocorreu. Terminando o programa."
+input_file_name_msg:
 	.asciiz "Digite o nome do seu arquivo: "
-file: 			# nome do arquivo que será colocado pelo usuário
-	.ascii ""	
+file_name: 		# nome do arquivo que será colocado pelo usuário
+	.asciiz ""	
 array:
 	.align 2
 	.space 1024
@@ -48,31 +48,31 @@ exit_error:
 get_file_name:
 # Retorna em $v0 o endereço para o nome do arquivo. Usa do dialog para input
 	li $v0, 54 		# carrega chamada de sistema para mostrar um dialog para input de string
-	la $a0, file_name_input # carrega a mensagem a ser mostrada no dialog
-	la $a1, file 		# carrega o local onde será armazenado o input do usuário
+	la $a0, input_file_name_msg # carrega a mensagem a ser mostrada no dialog
+	la $a1, file_name 	# carrega o local onde será armazenado o input do usuário
 	lw $a2, min_size 	# carrega o número de bytes que serão lidos
 	syscall 		# coloca em $a1 o valor do status:
 				# (0: OK status. -2: Cancel. -3: input.vazio. -4: tamanho do input maior)
 	
-	bne $a1, $zero, exit 	# se o status foi diferente de 0, sai do programa
+	bne $a1, $zero, exit_error 	# se o status foi diferente de 0, sai do programa
 	
-	la $v0, file 		# carrega o nome do arquivo em $a0
+	la  $v0, file_name		# carrega o nome do arquivo em $v0, para retorno
 
 # inicializando contador do loop para limpar o nome do arquivo e 
 # tirar o caractere que determina o final da string que não serve quando for usar para abrir o arquivo	
-    	li $t0, 0       	
-    	li $t1, 21      	# inicializando o final do loop
+    	li  $t0, 0       	
+    	lw  $t1, min_size	      	# inicializando o final do loop
     
-file_name_clean:
-    beq $t0, $t1, back_process  # verifica se o loop chegou ao final
-    lb $t3, file($t0) 		# pega o byte de determinada posição do nome do arquivo
-    bne $t3, 0x0a, add_cont 	# verifica se esse byte contém o caracter 10 (0xa) (linefeed)
-    sb $zero, file($t0) 	# se for igual ao caracter 10, substitui ele por zero
-
-add_cont:
-    	addi $t0, $t0, 1 #adiciona um ao contador
-	j file_name_clean
-back_process:
+remove_line_feed_loop:
+	beq $t0, $t1, end_remove_line_feed_loop	# verifica se o loop chegou ao final
+        lb  $t3, file_name($t0) 		# pega o byte de determinada posição do nome do arquivo
+        bne $t3, 10, cont_remove_line_feed_loop # verifica se esse byte contém o caracter 10 (linefeed)
+        sb  $zero, file_name($t0) 	 	# se for igual ao caracter 10, substitui ele por zero
+	j   end_remove_line_feed_loop
+cont_remove_line_feed_loop:
+    	addi $t0, $t0, 1 			# incrementa o contador
+	j remove_line_feed_loop
+end_remove_line_feed_loop:
 	jr $ra
 
 allocate_memory:
@@ -337,10 +337,10 @@ loop_print_int_array:
 	sll $t1, $t0, 2
 	add $t1, $t1, $s2
 	lw  $a0, 0($t1)
-	li $v0, 1
+	li  $v0, 1
 	syscall
-	la $a0, new_space	# imprime espaço
-	li $v0, 4
+	la  $a0, new_space	# imprime espaço
+	li  $v0, 4
 	syscall
 	addi $t0, $t0, 1	# decrementa contador
 	j loop_print_int_array
