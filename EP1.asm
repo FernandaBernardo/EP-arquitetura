@@ -249,6 +249,7 @@ convert_to_int_array:
 	
 conv_loop:
 	beq  $s1, $t1, end_conv_loop	# se o valor do contador = número de bytes lidos do arquivo, termina loop de conversão
+
 	add  $t4, $t1, $t0   		# soma o contador ao endereço base, pois está endereçando byte a byte
 	lb   $t5, 0($t4)       		# armazena em $t5 o elemento do array
 
@@ -301,13 +302,13 @@ restore_convert_to_int_array:
 	
 	addi $t1, $t1, -2		# senão detectou em nenhum cenário, volta contador pro estado inicial antes desses testes
 					
-
 convert_byte:	
 # $t0 = endereço base do array de bytes, $t1 = contador de leitura, $t2 = contador de escrita, 
 # $t3 = var para o inteiro sendo construído, $t5 = último byte lido
 # $s2 = endereço base do array de inteiros
 	addi $t1, $t1, 1    	# incrementa contador de leitura
-	
+
+	li   $t7, 1	
 	beq  $t5, 32, add_int	# verifica se é espaço, se for adiciona o inteiro lido até agora
 	addi $t5, $t5, -48	# senão, subtrai 48 para converter de ASCII para int
 	
@@ -320,12 +321,14 @@ add_int:
 	sll $t6, $t2, 2		# multiplica por 4
 	add $t6, $t6, $s2	# soma deslocamento (contador de escrita) ao endereço base do array de inteiro
 	sw  $t3, 0($t6)		# armazena inteiro construído da posição calculada
-
+	li $t7, 0
+	
 	add $t3, $zero, $zero	# zera valor da var para inteiro sendo construído
 	addi $t2, $t2, 1 	# incrementa contador de escrita 
 	j conv_loop		
 
 end_conv_loop:
+	beq $t7, 1, add_int
 	add $s4, $t2, $zero	# armazena em $s4 o número de inteiros escritos
 	jr $ra  
 
