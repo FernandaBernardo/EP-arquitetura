@@ -236,20 +236,23 @@ convert_to_int_array:
 # ignora bytes que definam espaçamento ou quebra de linha (tanto em windows como em unix)
 # armazena o endereço base do array de inteiros resultantes em $s2
 # o array de inteiros resutante tem o mesmo tamanho que o valor que $s1 possuir
-	add $t0, $s0, $zero   		# pega o endereço base do array de bytes 
-	add $t1, $zero, $zero   	# inicia contador de leitura
-	add $t2, $zero, $zero		# inicia contador de escrita
-	add $t3, $zero, $zero		# inicia variável para inteiro lido
-	
+	add  $t0, $s0, $zero   		# pega o endereço base do array de bytes 
+	add  $t1, $zero, $zero   	# inicia contador de leitura
+	add  $t2, $zero, $zero		# inicia contador de escrita
+	add  $t3, $zero, $zero		# inicia variável para inteiro lido
+	addi $t8, $zero, 1		# inicia indicador de necessidade de teste pela
+					# existência de sinal '-' no inteiro em construção, default 1 (necessário)
+	add  $t9, $zero, $zero		# inicia variável para indicar se inteiro será positivo ou negativo
+			
 	add $a0, $s1, $zero		# carrega o número de bytes lidos do arquivo
 	sll $a0, $a0, 2			# multiplica por 4 pois bytes serão convertidos para int, que ocupa 4 bytes
-	li $v0, 9			# carrega chamada de sistema para alocação de memória
+	li  $v0, 9			# carrega chamada de sistema para alocação de memória
 	syscall 			# syscall: aloca $a0 bytes e retorna endereço do primeiro em $v0
 	add $s2, $v0, $zero		# salva em $s2 o endereço base do array de inteiros
 	
-conv_loop:
-	beq  $s1, $t1, end_conv_loop	# se o valor do contador = número de bytes lidos do arquivo, termina loop de conversão
-
+conversion_loop:
+	beq  $s1, $t1, end_conversion_loop
+					# se o valor do contador = número de bytes lidos do arquivo, termina loop de conversão
 	add  $t4, $t1, $t0   		# soma o contador ao endereço base, pois está endereçando byte a byte
 	lb   $t5, 0($t4)       		# armazena em $t5 o elemento do array
 
@@ -293,41 +296,56 @@ restore_convert_to_int_array:
 
 	addi $t1, $t1, 1		# incrementa $t1, pois leu um byte, pelo menos (mesmo que seja LF)
 	
-	beq $v0, 1, conv_loop		# se foi detectada nova linha no unix, deve ignorar 1 byte seguinte
-					# pois é apenas caractere especial (Line Feed)
+	beq $v0, 1, conversion_loop		# se foi detectada nova linha no unix, deve ignorar 1 byte seguinte
+						# pois é apenas caractere especial (Line Feed)
 
-	addi $t1, $t1, 1		# incrementa contador, pois se detectou nova linha no windows, deve ignorar os 2 bytes seguintes
-					# visto que no windows, são 2 bytes para nova linha = (CR)(LF)
-	beq  $v0, 2, conv_loop
+	addi $t1, $t1, 1			# incrementa contador, pois se detectou nova linha no windows, deve ignorar os 2 bytes seguintes
+						# visto que no windows, são 2 bytes para nova linha = (CR)(LF)
+	beq  $v0, 2, conversion_loop
 	
-	addi $t1, $t1, -2		# senão detectou em nenhum cenário, volta contador pro estado inicial antes desses testes
+	addi $t1, $t1, -2			# senão detectou em nenhum cenário, volta contador pro estado inicial antes desses testes
 					
 convert_byte:	
 # $t0 = endereço base do array de bytes, $t1 = contador de leitura, $t2 = contador de escrita, 
 # $t3 = var para o inteiro sendo construído, $t5 = último byte lido
 # $s2 = endereço base do array de inteiros
-	addi $t1, $t1, 1    	# incrementa contador de leitura
+	addi $t1, $t1, 1    			# incrementa contador de leitura
 
-	li   $t7, 1	
+	li   $t7, 1				# indica que deve-se fazer um 'flush' de $t3 ao terminar o conversion_loop
+	
+	beqz $t8, continue_convert_byte 	# se não deve testar, continua conversão
+	bne  $t5, 45, continue_convert_byte	# se não é igual a '-', continua conversão
+	add  $t9, $zero, 1			# seta indicador de negatividade do inteiro para true
+	add  $t5, $zero, 48			# zera $t3 para não interpretar 45 como parte do número
+	add  $t8, $zero, $zero			# já testou, não deve testar até o prox. int
+	
+continue_convert_byte:
 	beq  $t5, 32, add_int	# verifica se é espaço, se for adiciona o inteiro lido até agora
 	addi $t5, $t5, -48	# senão, subtrai 48 para converter de ASCII para int
 	
 	mul  $t3, $t3, 10	# avança casa decimal na variável a ser escrita no array
 	add  $t3, $t3, $t5	# soma o a unidade atual
 
-	j conv_loop		# continua o loop
+	j conversion_loop	# continua o loop
     
 add_int:
 	sll $t6, $t2, 2		# multiplica por 4
 	add $t6, $t6, $s2	# soma deslocamento (contador de escrita) ao endereço base do array de inteiro
-	sw  $t3, 0($t6)		# armazena inteiro construído da posição calculada
-	li $t7, 0
 	
-	add $t3, $zero, $zero	# zera valor da var para inteiro sendo construído
+	seq  $t4, $t9, 1	# testa se o inteiro deve ser negativo
+	beqz $t4, do_add_int	# se não é, pula logo para a inserção no vetor
+	mul  $t3, $t3, -1
+do_add_int:
+	sw  $t3, 0($t6)		# armazena inteiro construído da posição calculada
+	li  $t7, 0		# indica que não deve-se fazer um 'flush' de $t5 ao terminar o conversion_loop, visto que já escreveu $t3
+	
+	add  $t3, $zero, $zero	# zera valor da var para inteiro sendo construído
+	addi $t8, $zero, 1      # indica que deve-se testar por presença de sinal
+	add  $t9, $zero, $zero	# zera indicador de presença de sinal
 	addi $t2, $t2, 1 	# incrementa contador de escrita 
-	j conv_loop		
+	j conversion_loop		
 
-end_conv_loop:
+end_conversion_loop:
 	beq $t7, 1, add_int
 	add $s4, $t2, $zero	# armazena em $s4 o número de inteiros escritos
 	jr $ra  
