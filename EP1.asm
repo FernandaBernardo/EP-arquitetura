@@ -10,7 +10,7 @@ bytes_readed:		# msg para print - facilita debug
 int_array_ended:	# msg para print - facilita debug
 	.asciiz "Fim do array de inteiros\n"
 int_readed:
-	.asciiz "Número de inteiros convertidos: "
+	.asciiz "Número de inteiros: "
 exit_error_msg:
 	.asciiz "Um erro ocorreu. Terminando o programa."
 input_file_name_msg:
@@ -31,6 +31,11 @@ main:
 	jal read_file
 	jal print_byte_array
 	jal convert_to_int_array
+	jal print_int_array
+	
+	add $a0, $s2, $zero # base do array
+	add $a1, $s4, $zero # numero de elementos no array
+	jal quicksort
 	jal print_int_array
 	j exit
 
@@ -352,6 +357,10 @@ end_conversion_loop:
 
 print_int_array:
 # $s2 = endereço base do array de inteiros, $s4 = número de inteiros escritos no array
+	la $a0, new_line
+	li $v0, 4
+	syscall
+
 	add $t0, $zero, $zero	# inicia contador
 loop_print_int_array:
 	beq $t0, $s4, end_print_int_array
@@ -402,6 +411,118 @@ not_new_line_unix_lf:
 	add  $v0, $zero, $zero
 	jr   $ra
 	
+#########################################################################	
+#########################################################################
+#########################################################################
+quicksort:
+# $a0 - endereço do primeiro byte do array de int
+# $a1 - tamanho do array
+	addi $a2, $a1, -1
+	add  $a1, $zero, $zero
+	addi $sp, $sp, -4
+	sw   $ra, 0($sp)
+	jal  quicksort_recursion
+	lw   $ra, 0($sp)
+	addi $sp, $sp, 4
+	jr   $ra
+
+quicksort_recursion:
+# $a0 - endereço do primeiro byte do array de int
+# $a1 - posição inicial
+# $a2 - posição final
+	slt  $t0, $a1, $a2	# se  pos inicial < pos final, deve ordenar
+	beqz $t0, end_quicksort_recursion
 	
+	addi $sp, $sp, -16
+	sw   $ra, 12($sp)
+	sw   $a2 , 8($sp)
+	sw   $a1,  4($sp)
+	sw   $a0,  0($sp)
+	jal particao 
+	lw   $ra, 12($sp)
+	lw   $a2,  8($sp)
+	lw   $a1,  4($sp)
+	lw   $a0,  0($sp)
+	add  $sp, $sp, 16
 	
+	add  $t0, $v0, $zero	# armazena índice da particao  		
 	
+	add  $t1, $a2, $zero	# salva para uso posterior
+
+	addi $sp, $sp, -16
+	sw   $ra, 12($sp)
+	sw   $t0,  8($sp)
+	sw   $t1,  4($sp)
+	sw   $a1,  0($sp) 
+
+	add  $a2, $t0, -1	# chama recursao para pos inicial atual, indice da particao - 1
+	jal quicksort_recursion
+
+	lw   $ra, 12($sp)
+	lw   $t0,  8($sp)
+	lw   $t1,  4($sp)
+	lw   $a1,  0($sp) 
+	addi $sp, $sp, 16
+	
+	add  $a2, $t1, $zero	# restaura a2 - pos final atual
+	add  $a1, $t0, 1	# chama recursao para indice da particao + 1, pos final atual
+	
+	addi $sp, $sp, -4
+	sw   $ra, 0($sp)
+	jal quicksort_recursion
+	lw   $ra, 0($sp)
+	addi $sp, $sp, 4
+end_quicksort_recursion:
+	jr   $ra
+
+particao:
+# particiona o array dado em menor ou igual um pivot ou maior que o mesmo
+# $a0 - Endereço base, $a1 - indíce do primeiro elemento, $a2 - índice do último elemento
+# retorna posicao do divisor (índice do pivot que divide o array em particoes)
+
+# $t0 - pivot, $t1 - limite de menores ou iguais ou pivot
+# $t2 - indice para percorrer sub-array
+	sll  $t0, $a2, 2	# multiplica por 4
+	add  $t0, $t0, $a0	# calcula endereco do pivot
+	lw   $t0, 0($t0)	# armazena pivot 
+	
+	addi $t1, $a1, -1	# inicializa variável do limite de menores ou iguais
+	add  $t2, $a1, $zero	# inicializa indice com primeira posicao do sub array
+	
+particao_loop:
+	slt  $t3, $t2, $a2	# enquanto indice < último ind.
+	beq  $t3, $zero, end_particao
+	
+	sll  $t3, $t2,  2	# multiplica indice por 4
+	add  $t3, $t3, $a0	# calcula endereco da posicao no array
+	lw   $t4, 0($t3)	# carrega elemento do array
+	
+	sle  $t5, $t4, $t0	# testa se é menor ou igual ao pivot
+	beq  $t5, $zero, continue_particao_loop # se é maior, continua loop
+	addi $t1, $t1, 1	# senão, incrementa limite de menores ou iguais, pois achou um novo menor ou igual
+
+# faz swap
+	sll  $t5, $t1, 2
+	add  $t5, $t5, $a0	# calcula endereço em memoria do limite de menores ou iguais
+	lw   $t6, 0($t5)	# armazena elemento da posicao
+	sw   $t4, 0($t5)	# substitui um valor
+	sw   $t6, 0($t3)	# substitui outro valor  
+# fim do swap	
+continue_particao_loop:
+	add  $t2, $t2, 1	# incrementa indice do sub array
+	j particao_loop
+
+end_particao:
+# reposicionamento do pivot - outro swap
+	addi $t1, $t1, 1	# calcula offset da nova posicao
+	sll  $t2, $t1, 2	# multiplica por 4
+	add  $t2, $t2, $a0	# calcula o endereco da nova posicao
+	lw   $t3, 0($t2)	# obtem antigo valor da nova posicao
+	sw   $t0, 0($t2)	# armazena pivot na nova posicao
+	sll  $t0, $a2, 2
+	add  $t0, $t0, $a0	# calcula antigo endereco do pivot
+	sw   $t3, 0($t0)	# armazena elemento na pos antiga do pivot
+	
+	add  $v0, $t1, $zero	# armazena para retorno
+
+	jr $ra
