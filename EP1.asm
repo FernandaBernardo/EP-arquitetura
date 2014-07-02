@@ -316,7 +316,7 @@ convert_byte:
 	beqz $t8, continue_convert_byte 	# se não deve testar, continua conversão
 	bne  $t5, 45, continue_convert_byte	# se não é igual a '-', continua conversão
 	add  $t9, $zero, 1			# seta indicador de negatividade do inteiro para true
-	add  $t5, $zero, 48			# zera $t3 para não interpretar 45 como parte do número
+	add  $t5, $zero, 48			# zera $t5 para não interpretar 45 como parte do número
 	add  $t8, $zero, $zero			# já testou, não deve testar até o prox. int
 	
 continue_convert_byte:
