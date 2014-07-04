@@ -1,27 +1,27 @@
 .data
 new_line:           	# nova linha, para prints - facilita debug
     	.asciiz "\n"
-new_space:           	# novo espaço, para prints - facilita debug
+new_space:           	# novo espaï¿½o, para prints - facilita debug
     	.asciiz " "
 byte_array_ended:	# msg para print ao terminar de printar um array de bytes - facilita debug
 	.asciiz "Fim do array de bytes\n"
 bytes_readed:		# msg para print - facilita debug
-	.asciiz "Número de bytes lidos: "
+	.asciiz "Nï¿½mero de bytes lidos: "
 int_array_ended:	# msg para print - facilita debug
 	.asciiz "Fim do array de inteiros\n"
 int_readed:
-	.asciiz "Número de inteiros: "
+	.asciiz "Nï¿½mero de inteiros: "
 exit_error_msg:
 	.asciiz "Um erro ocorreu. Terminando o programa."
 input_file_name_msg:
 	.asciiz "Digite o nome do seu arquivo: "
-file_name: 		# nome do arquivo que será colocado pelo usuário
+file_name: 		# nome do arquivo que serï¿½ colocado pelo usuï¿½rio
 	.asciiz ""	
 array:
 	.align 2
 	.space 1024
 min_size:
-	.word 256		# número inicial de bytes a serem lidos do arquivo
+	.word 256		# nï¿½mero inicial de bytes a serem lidos do arquivo
 .text
 .globl main
 main:
@@ -33,9 +33,9 @@ main:
 	jal convert_to_int_array
 	jal print_int_array
 	
-	add $a0, $s2, $zero # base do array
-	add $a1, $s4, $zero # numero de elementos no array
-	jal quicksort
+	add $a0, $s2, $zero # base do array de inteiros
+	add $a1, $s4, $zero # numero de elementos no array de inteiros
+	jal insertion_sort
 	jal print_int_array
 	j exit
 
@@ -51,11 +51,11 @@ exit_error:
 	syscall
 	j exit	
 get_file_name:
-# Retorna em $v0 o endereço para o nome do arquivo. Usa do dialog para input
+# Retorna em $v0 o endereï¿½o para o nome do arquivo. Usa do dialog para input
 	li $v0, 54 		# carrega chamada de sistema para mostrar um dialog para input de string
 	la $a0, input_file_name_msg # carrega a mensagem a ser mostrada no dialog
-	la $a1, file_name 	# carrega o local onde será armazenado o input do usuário
-	lw $a2, min_size 	# carrega o número de bytes que serão lidos
+	la $a1, file_name 	# carrega o local onde serï¿½ armazenado o input do usuï¿½rio
+	lw $a2, min_size 	# carrega o nï¿½mero de bytes que serï¿½o lidos
 	syscall 		# coloca em $a1 o valor do status:
 				# (0: OK status. -2: Cancel. -3: input.vazio. -4: tamanho do input maior)
 	
@@ -64,14 +64,14 @@ get_file_name:
 	la  $v0, file_name		# carrega o nome do arquivo em $v0, para retorno
 
 # inicializando contador do loop para limpar o nome do arquivo e 
-# tirar o caractere que determina o final da string que não serve quando for usar para abrir o arquivo	
+# tirar o caractere que determina o final da string que nï¿½o serve quando for usar para abrir o arquivo	
     	li  $t0, 0       	
     	lw  $t1, min_size	      	# inicializando o final do loop
     
 remove_line_feed_loop:
 	beq $t0, $t1, end_remove_line_feed_loop	# verifica se o loop chegou ao final
-        lb  $t3, file_name($t0) 		# pega o byte de determinada posição do nome do arquivo
-        bne $t3, 10, cont_remove_line_feed_loop # verifica se esse byte contém o caracter 10 (linefeed)
+        lb  $t3, file_name($t0) 		# pega o byte de determinada posiï¿½ï¿½o do nome do arquivo
+        bne $t3, 10, cont_remove_line_feed_loop # verifica se esse byte contï¿½m o caracter 10 (linefeed)
         sb  $zero, file_name($t0) 	 	# se for igual ao caracter 10, substitui ele por zero
 	j   end_remove_line_feed_loop
 cont_remove_line_feed_loop:
@@ -81,20 +81,20 @@ end_remove_line_feed_loop:
 	jr $ra
 
 allocate_memory:
-# Armazena em $v0 o endereço do primeiro byte dentre $a0 * min_size bytes alocados
-	lw  $t0, min_size	# carrega numero inicial de bytes para alocação
-	mul $t0, $t0, $a0	# multiplica numero inicial pelo fator do parâmetro 
+# Armazena em $v0 o endereï¿½o do primeiro byte dentre $a0 * min_size bytes alocados
+	lw  $t0, min_size	# carrega numero inicial de bytes para alocaï¿½ï¿½o
+	mul $t0, $t0, $a0	# multiplica numero inicial pelo fator do parï¿½metro 
 	add $a0, $zero, $t0	# carrega como argumento da syscall o numero de bytes a ser alocado
-	li  $v0, 9		# carrega chamada de sistema para alocar memória
-	syscall			# syscall: aloca $a0 * min_size bytes e devolve em $v0 o endereço do primeiro deles
+	li  $v0, 9		# carrega chamada de sistema para alocar memï¿½ria
+	syscall			# syscall: aloca $a0 * min_size bytes e devolve em $v0 o endereï¿½o do primeiro deles
 	jr $ra			
 
 copy_byte_array:
-# copia de origem ($a0) para destino ($a1), um determinado número de bytes ($a2)
-# não retorna nada, mantendo intacto valor de $v0, $a0, $a1 e $a2
-	add  $t0, $zero, $zero 	#inicializa índice do array com 0
+# copia de origem ($a0) para destino ($a1), um determinado nï¿½mero de bytes ($a2)
+# nï¿½o retorna nada, mantendo intacto valor de $v0, $a0, $a1 e $a2
+	add  $t0, $zero, $zero 	#inicializa ï¿½ndice do array com 0
 copy_byte_array_loop:	
-	slt  $t3, $t0, $a2	# se indice = tamanho, termina função
+	slt  $t3, $t0, $a2	# se indice = tamanho, termina funï¿½ï¿½o
 	beq  $t3, 0, end_copy_byte_array
 	add  $t1, $a0, $t0	# t1 = *origem + indice 
 	lb   $t1, 0($t1)	# t1 = origem[ indice ], ou seja, t1 = byte a ser copiado
@@ -109,73 +109,73 @@ read_file:
 # Abre pra leitura o arquivo de entrada especificado em $a0
 	
 	li   $v0, 13        	# carrega chamada de sistema para abertura de arquivo
-	# É esperado que $a0 contenha o endereço para o nome do arquivo
-	li   $a1, 0     	# parâmetro para abrir para leitura (0: leitura, 1: escrita)
+	# ï¿½ esperado que $a0 contenha o endereï¿½o para o nome do arquivo
+	li   $a1, 0     	# parï¿½metro para abrir para leitura (0: leitura, 1: escrita)
 	syscall         	# syscall: abre arquivo e armazena em $v0 o descritor de arquivo
 	
-	slt  $t0, $v0, $zero	# testa se é menor que zero. se sim, houve erro.
+	slt  $t0, $v0, $zero	# testa se ï¿½ menor que zero. se sim, houve erro.
 	beq  $t0, 1, exit_error
 	
 	add  $t0, $v0, $zero 	# salva descritor de arquivo
 	
 	addi $t2, $zero, 1	# inicializa contador
 	
-	addi $sp, $sp, -16	# aloca espaço na pilha para salvar variáveis atuais
-	sw   $ra, 12($sp)	# salva endereço de retorno
+	addi $sp, $sp, -16	# aloca espaï¿½o na pilha para salvar variï¿½veis atuais
+	sw   $ra, 12($sp)	# salva endereï¿½o de retorno
 	sw   $fp,  8($sp)	# salva frame pointer atual
 	sw   $t2,  4($sp)	# salva contador atual
 	sw   $t0,  0($sp)	# salva descritor de arquivo
 	add  $fp, $sp, $zero	# fp = sp
 	
-	# t0 = descritor do arquivo, t1 = endereço base do array, t2 = contador
+	# t0 = descritor do arquivo, t1 = endereï¿½o base do array, t2 = contador
 	
-	add $a0, $zero, $t2	# parâmetro esperado para função, inicialmente 1, no caso
-	jal allocate_memory	# armazena em $v0 o endereço de min_size bytes recém alocados
-	add $t1, $v0, $zero	# salva o endereço base do array de bytes alocado
+	add $a0, $zero, $t2	# parï¿½metro esperado para funï¿½ï¿½o, inicialmente 1, no caso
+	jal allocate_memory	# armazena em $v0 o endereï¿½o de min_size bytes recï¿½m alocados
+	add $t1, $v0, $zero	# salva o endereï¿½o base do array de bytes alocado
 	add $s0, $v0, $zero	
 		
-	lw $ra, 12($sp)		# restaura endereço de retorno - começa restauração
+	lw $ra, 12($sp)		# restaura endereï¿½o de retorno - comeï¿½a restauraï¿½ï¿½o
 	lw $fp,  8($sp)		# restaura frame pointer
 	lw $t2,  4($sp)		# restaura contador
 	lw $t0,  0($sp)		# restaura descritor do arquivo
-	add $sp, $sp, 16	# desaloca espaço na pilha - fim da restauração
+	add $sp, $sp, 16	# desaloca espaï¿½o na pilha - fim da restauraï¿½ï¿½o
 
 read:	
 	li   $v0, 14        	# carrega chamada de sistema para ler do arquivo
 	add  $a0, $t0, $zero 	# guarda em $a0 o descritor do arquivo
-	add  $a1, $t1, $zero   	# carrega endereço inicial de onde serão guardados os bytes lidos
-	lw   $a2, min_size     	# carrega limite máximo de leitura por iteração
-	syscall             	# syscall: lê no máx. $a2 bytes do arquivo e armazena em $v0 a qtde de bytes lidas de fato
+	add  $a1, $t1, $zero   	# carrega endereï¿½o inicial de onde serï¿½o guardados os bytes lidos
+	lw   $a2, min_size     	# carrega limite mï¿½ximo de leitura por iteraï¿½ï¿½o
+	syscall             	# syscall: lï¿½ no mï¿½x. $a2 bytes do arquivo e armazena em $v0 a qtde de bytes lidas de fato
 
 	bltz $v0, exit_error
 
-	slt  $t3, $v0, $a2	# testa se o número de bytes lido é menor que o limite por iteração 
+	slt  $t3, $v0, $a2	# testa se o nï¿½mero de bytes lido ï¿½ menor que o limite por iteraï¿½ï¿½o 
 	beq  $t3, 1, close_file # se leu menos, fecha o arquivo e salva dados lidos
-				# senão, aloca mais memória para o array e continua leitura
+				# senï¿½o, aloca mais memï¿½ria para o array e continua leitura
 	
-	# t0 = descritor do arquivo, t1 = endereço base do array, t2 = contador	
+	# t0 = descritor do arquivo, t1 = endereï¿½o base do array, t2 = contador	
 	addi $t2, $t2, 1	# incrementa contador (fator de mult. de numero de bytes a serem alocados)
 	
-	addi $sp, $sp, -24	# aloca espaço na pilha para salvar estado atual
+	addi $sp, $sp, -24	# aloca espaï¿½o na pilha para salvar estado atual
 	sw   $ra, 20($sp)	# salva retorno 
 	sw   $fp, 16($sp)	# salva frame pointer atual
 	sw   $t0, 12($sp)	# salva descritor do arquivo
-	sw   $t1, 8($sp)	# salva endereço base do array
+	sw   $t1, 8($sp)	# salva endereï¿½o base do array
 	sw   $t2, 4($sp)	# salva contador atual
 	sw   $v0, 0($sp)	# salva retorno atual
 	add  $fp, $sp, $zero	# fp = sp
 
-	# t0 = descritor do arquivo, t1 = endereço base do array, t2 = contador
+	# t0 = descritor do arquivo, t1 = endereï¿½o base do array, t2 = contador
 	add $a0, $zero, $t2
-	jal allocate_memory	# retorna em $v0 o endereço de $a0 * min_size bytes recém alocados
-	add $s0, $v0, $zero	# armazena em $s0 o endereço base do array com a cópia
+	jal allocate_memory	# retorna em $v0 o endereï¿½o de $a0 * min_size bytes recï¿½m alocados
+	add $s0, $v0, $zero	# armazena em $s0 o endereï¿½o base do array com a cï¿½pia
 	
-	add  $a1, $zero, $v0	# (parâmetro) endereço base do array recém alocado que armazenará a cópia - destino
+	add  $a1, $zero, $v0	# (parï¿½metro) endereï¿½o base do array recï¿½m alocado que armazenarï¿½ a cï¿½pia - destino
 	lw   $t2, 4($sp)	# carrega temporariamente contador atual
 	addi $a2, $t2, -1	# $a2 = contador - 1
 	lw   $t0, min_size    	# carrega temporariamente o min_size
-	mul  $a2, $a2, $t0	# (parâmetro) número de elementos a serem copiados da origem = ( contador - 1 ) * min_size
-	lw   $a0, 8($sp)	# (parâmetro) endereço base do array a ser copiado - origem
+	mul  $a2, $a2, $t0	# (parï¿½metro) nï¿½mero de elementos a serem copiados da origem = ( contador - 1 ) * min_size
+	lw   $a0, 8($sp)	# (parï¿½metro) endereï¿½o base do array a ser copiado - origem
 	add  $t3, $t2, -2
 	mul  $t3, $t3, $t0
 	sub  $a0, $a0, $t3
@@ -185,21 +185,21 @@ read:
 	lw   $ra, 20($sp)	# restaura retorno 
 	lw   $fp, 16($sp)	# restaura frame pointer atual
 	lw   $t0, 12($sp)	# restaura descritor do arquivo
-	lw   $t1, 8($sp)	# restaura endereço base do array
+	lw   $t1, 8($sp)	# restaura endereï¿½o base do array
 	lw   $t2, 4($sp)	# restaura contador
 	lw   $v0, 0($sp)	# restaura retorno atual
-	addi $sp, $sp, 24	# desaloca espaço na pilha para salvar estado atual	
+	addi $sp, $sp, 24	# desaloca espaï¿½o na pilha para salvar estado atual	
 	
 	add $t1, $s0, $zero
 	
 	lw   $t3, min_size
 	addi $t4, $t2, -1
 	mul  $t4, $t4, $t3
-	add  $t1, $s0, $t4	# armazena em t1 o endereço base do array da copia, deslocado das cópias (na prox. posição vazia)
+	add  $t1, $s0, $t4	# armazena em t1 o endereï¿½o base do array da copia, deslocado das cï¿½pias (na prox. posiï¿½ï¿½o vazia)
 	j read	
 	
 close_file:
-	#Antes de fechar o arquivo, armazena em $s1 o número de bytes lidos na última iteração
+	#Antes de fechar o arquivo, armazena em $s1 o nï¿½mero de bytes lidos na ï¿½ltima iteraï¿½ï¿½o
 	add $s1, $v0, $zero
 
 	#Fechamento do arquivo
@@ -207,18 +207,18 @@ close_file:
 	add  $a0, $t0, $zero   	# descritor de arquivo a ser fechado
 	syscall             	# syscall: fecha o arquivo de descritor $a0
 	
-	# Em $s0 já se tem o endereço base do array de bytes lido
+	# Em $s0 jï¿½ se tem o endereï¿½o base do array de bytes lido
 	
-	# calcula o numero de bytes lidos antes da ultima iteração
+	# calcula o numero de bytes lidos antes da ultima iteraï¿½ï¿½o
 	lw  $t1, min_size	
 	add $t2, $t2, -1
-	mul $t0, $t1, $t2	# multiplica o contador pelo limite max por iteração
-	add $s1, $s1, $t0	# s1 = bytes da última + bytes antes da última
+	mul $t0, $t1, $t2	# multiplica o contador pelo limite max por iteraï¿½ï¿½o
+	add $s1, $s1, $t0	# s1 = bytes da ï¿½ltima + bytes antes da ï¿½ltima
     	jr $ra
     
 print_byte_array: 
-    	add $a0, $s0, $zero	# carrega endereço da posição inicial do array de bytes que contém o arquivo
-    	li $v0, 4		# carrega comando para print, considerando o endereço em $a0 como uma string
+    	add $a0, $s0, $zero	# carrega endereï¿½o da posiï¿½ï¿½o inicial do array de bytes que contï¿½m o arquivo
+    	li $v0, 4		# carrega comando para print, considerando o endereï¿½o em $a0 como uma string
     	syscall			# chamada de sistema para printar
     	la $a0, new_line    	# printa nova linha para facilitar debug
     	syscall
@@ -237,126 +237,126 @@ print_byte_array:
     	jr $ra
     
 convert_to_int_array:
-# converte o array de bytes cujo endereço base está em $s0 em um array de inteiros
-# ignora bytes que definam espaçamento ou quebra de linha (tanto em windows como em unix)
-# armazena o endereço base do array de inteiros resultantes em $s2
+# converte o array de bytes cujo endereï¿½o base estï¿½ em $s0 em um array de inteiros
+# ignora bytes que definam espaï¿½amento ou quebra de linha (tanto em windows como em unix)
+# armazena o endereï¿½o base do array de inteiros resultantes em $s2
 # o array de inteiros resutante tem o mesmo tamanho que o valor que $s1 possuir
-	add  $t0, $s0, $zero   		# pega o endereço base do array de bytes 
+	add  $t0, $s0, $zero   		# pega o endereï¿½o base do array de bytes 
 	add  $t1, $zero, $zero   	# inicia contador de leitura
 	add  $t2, $zero, $zero		# inicia contador de escrita
-	add  $t3, $zero, $zero		# inicia variável para inteiro lido
+	add  $t3, $zero, $zero		# inicia variï¿½vel para inteiro lido
 	addi $t8, $zero, 1		# inicia indicador de necessidade de teste pela
-					# existência de sinal '-' no inteiro em construção, default 1 (necessário)
-	add  $t9, $zero, $zero		# inicia variável para indicar se inteiro será positivo ou negativo
+					# existï¿½ncia de sinal '-' no inteiro em construï¿½ï¿½o, default 1 (necessï¿½rio)
+	add  $t9, $zero, $zero		# inicia variï¿½vel para indicar se inteiro serï¿½ positivo ou negativo
 			
-	add $a0, $s1, $zero		# carrega o número de bytes lidos do arquivo
-	sll $a0, $a0, 2			# multiplica por 4 pois bytes serão convertidos para int, que ocupa 4 bytes
-	li  $v0, 9			# carrega chamada de sistema para alocação de memória
-	syscall 			# syscall: aloca $a0 bytes e retorna endereço do primeiro em $v0
-	add $s2, $v0, $zero		# salva em $s2 o endereço base do array de inteiros
+	add $a0, $s1, $zero		# carrega o nï¿½mero de bytes lidos do arquivo
+	sll $a0, $a0, 2			# multiplica por 4 pois bytes serï¿½o convertidos para int, que ocupa 4 bytes
+	li  $v0, 9			# carrega chamada de sistema para alocaï¿½ï¿½o de memï¿½ria
+	syscall 			# syscall: aloca $a0 bytes e retorna endereï¿½o do primeiro em $v0
+	add $s2, $v0, $zero		# salva em $s2 o endereï¿½o base do array de inteiros
 	
 conversion_loop:
 	beq  $s1, $t1, end_conversion_loop
-					# se o valor do contador = número de bytes lidos do arquivo, termina loop de conversão
-	add  $t4, $t1, $t0   		# soma o contador ao endereço base, pois está endereçando byte a byte
+					# se o valor do contador = nï¿½mero de bytes lidos do arquivo, termina loop de conversï¿½o
+	add  $t4, $t1, $t0   		# soma o contador ao endereï¿½o base, pois estï¿½ endereï¿½ando byte a byte
 	lb   $t5, 0($t4)       		# armazena em $t5 o elemento do array
 
-# $t0 = endereço base do array de bytes, $t1 = contador de leitura, $t2 = contador de escrita, 
-# $t3 = var para o inteiro sendo construído, $t5 = último byte lido
+# $t0 = endereï¿½o base do array de bytes, $t1 = contador de leitura, $t2 = contador de escrita, 
+# $t3 = var para o inteiro sendo construï¿½do, $t5 = ï¿½ltimo byte lido
 
-	addi $sp, $sp, -28		# aloca espaço na pilha para salvar variáveis
-	sw   $ra, 24($sp)		# salva endereço de retorno atual
+	addi $sp, $sp, -28		# aloca espaï¿½o na pilha para salvar variï¿½veis
+	sw   $ra, 24($sp)		# salva endereï¿½o de retorno atual
 	sw   $fp, 20($sp)		# salva frame pointer atual
-	sw   $t0, 16($sp)		# salva endereço base do array de bytes
+	sw   $t0, 16($sp)		# salva endereï¿½o base do array de bytes
 	sw   $t1, 12($sp) 		# salva contador de leitura
 	sw   $t2,  8($sp)		# salva contador de escrita
 	sw   $t3,  4($sp)		# salva var para inteiro lido
 	sw   $t5,  0($sp)		# salva valor do byte lido
 	add  $fp, $sp, $zero		# fp = sp
 	
-	add $a0, $t5, $zero		# (parâmetro) byte lido do array
+	add $a0, $t5, $zero		# (parï¿½metro) byte lido do array
 	jal new_line_unix
 	beq $v0, 1, restore_convert_to_int_array 
-	# se é nova linha, continua restaurando estado (usa $v0 posteriormente)
+	# se ï¿½ nova linha, continua restaurando estado (usa $v0 posteriormente)
 	
 	lw   $t1, 12($sp)		# restaura contador de leitura para obter segundo argumento
-	lw   $t0, 16($sp)		# restaura endereço base do array para obter segundo argumento
-	addi $t1, $t1, 1		# incrementa contador para obter próximo byte
-	add  $t4, $t1, $t0   		# soma o contador ao endereço base, pois está endereçando byte a byte
+	lw   $t0, 16($sp)		# restaura endereï¿½o base do array para obter segundo argumento
+	addi $t1, $t1, 1		# incrementa contador para obter prï¿½ximo byte
+	add  $t4, $t1, $t0   		# soma o contador ao endereï¿½o base, pois estï¿½ endereï¿½ando byte a byte
 	
-	add  $a0, $t5, $zero		# (parâmetro) byte lido do array
+	add  $a0, $t5, $zero		# (parï¿½metro) byte lido do array
 	lb   $a1, ($t4)			# armazena em $a1 o elemento do array
 	jal new_line_windows
-	# se é nova linha, continua restaurando estado (usa $v0 posteriormente)
+	# se ï¿½ nova linha, continua restaurando estado (usa $v0 posteriormente)
 	
 restore_convert_to_int_array:	
-	lw   $ra, 24($sp)		# restaura endereço de retorno atual
+	lw   $ra, 24($sp)		# restaura endereï¿½o de retorno atual
 	lw   $fp, 20($sp)		# restaura frame pointer atual
-	lw   $t0, 16($sp)		# restaura endereço base do array de bytes
+	lw   $t0, 16($sp)		# restaura endereï¿½o base do array de bytes
 	lw   $t1, 12($sp) 		# restaura contador de leitura
 	lw   $t2,  8($sp)		# restaura contador de escrita
 	lw   $t3,  4($sp)		# restaura var para inteiro lido
 	lw   $t5,  0($sp)		# restaura valor do byte lido
-	addi $sp, $sp, 24		# desaloca espaço na pilha para salvar variáveis
+	addi $sp, $sp, 24		# desaloca espaï¿½o na pilha para salvar variï¿½veis
 
 	addi $t1, $t1, 1		# incrementa $t1, pois leu um byte, pelo menos (mesmo que seja LF)
 	
 	beq $v0, 1, conversion_loop		# se foi detectada nova linha no unix, deve ignorar 1 byte seguinte
-						# pois é apenas caractere especial (Line Feed)
+						# pois ï¿½ apenas caractere especial (Line Feed)
 
 	addi $t1, $t1, 1			# incrementa contador, pois se detectou nova linha no windows, deve ignorar os 2 bytes seguintes
-						# visto que no windows, são 2 bytes para nova linha = (CR)(LF)
+						# visto que no windows, sï¿½o 2 bytes para nova linha = (CR)(LF)
 	beq  $v0, 2, conversion_loop
 	
-	addi $t1, $t1, -2			# senão detectou em nenhum cenário, volta contador pro estado inicial antes desses testes
+	addi $t1, $t1, -2			# senï¿½o detectou em nenhum cenï¿½rio, volta contador pro estado inicial antes desses testes
 					
 convert_byte:	
-# $t0 = endereço base do array de bytes, $t1 = contador de leitura, $t2 = contador de escrita, 
-# $t3 = var para o inteiro sendo construído, $t5 = último byte lido
-# $s2 = endereço base do array de inteiros
+# $t0 = endereï¿½o base do array de bytes, $t1 = contador de leitura, $t2 = contador de escrita, 
+# $t3 = var para o inteiro sendo construï¿½do, $t5 = ï¿½ltimo byte lido
+# $s2 = endereï¿½o base do array de inteiros
 	addi $t1, $t1, 1    			# incrementa contador de leitura
 
 	li   $t7, 1				# indica que deve-se fazer um 'flush' de $t3 ao terminar o conversion_loop
 	
-	beqz $t8, continue_convert_byte 	# se não deve testar, continua conversão
-	bne  $t5, 45, continue_convert_byte	# se não é igual a '-', continua conversão
+	beqz $t8, continue_convert_byte 	# se nï¿½o deve testar, continua conversï¿½o
+	bne  $t5, 45, continue_convert_byte	# se nï¿½o ï¿½ igual a '-', continua conversï¿½o
 	add  $t9, $zero, 1			# seta indicador de negatividade do inteiro para true
-	add  $t5, $zero, 48			# zera $t5 para não interpretar 45 como parte do número
-	add  $t8, $zero, $zero			# já testou, não deve testar até o prox. int
+	add  $t5, $zero, 48			# zera $t5 para nï¿½o interpretar 45 como parte do nï¿½mero
+	add  $t8, $zero, $zero			# jï¿½ testou, nï¿½o deve testar atï¿½ o prox. int
 	
 continue_convert_byte:
-	beq  $t5, 32, add_int	# verifica se é espaço, se for adiciona o inteiro lido até agora
-	addi $t5, $t5, -48	# senão, subtrai 48 para converter de ASCII para int
+	beq  $t5, 32, add_int	# verifica se ï¿½ espaï¿½o, se for adiciona o inteiro lido atï¿½ agora
+	addi $t5, $t5, -48	# senï¿½o, subtrai 48 para converter de ASCII para int
 	
-	mul  $t3, $t3, 10	# avança casa decimal na variável a ser escrita no array
+	mul  $t3, $t3, 10	# avanï¿½a casa decimal na variï¿½vel a ser escrita no array
 	add  $t3, $t3, $t5	# soma o a unidade atual
 
 	j conversion_loop	# continua o loop
     
 add_int:
 	sll $t6, $t2, 2		# multiplica por 4
-	add $t6, $t6, $s2	# soma deslocamento (contador de escrita) ao endereço base do array de inteiro
+	add $t6, $t6, $s2	# soma deslocamento (contador de escrita) ao endereï¿½o base do array de inteiro
 	
 	seq  $t4, $t9, 1	# testa se o inteiro deve ser negativo
-	beqz $t4, do_add_int	# se não é, pula logo para a inserção no vetor
+	beqz $t4, do_add_int	# se nï¿½o ï¿½, pula logo para a inserï¿½ï¿½o no vetor
 	mul  $t3, $t3, -1
 do_add_int:
-	sw  $t3, 0($t6)		# armazena inteiro construído da posição calculada
-	li  $t7, 0		# indica que não deve-se fazer um 'flush' de $t5 ao terminar o conversion_loop, visto que já escreveu $t3
+	sw  $t3, 0($t6)		# armazena inteiro construï¿½do da posiï¿½ï¿½o calculada
+	li  $t7, 0		# indica que nï¿½o deve-se fazer um 'flush' de $t5 ao terminar o conversion_loop, visto que jï¿½ escreveu $t3
 	
-	add  $t3, $zero, $zero	# zera valor da var para inteiro sendo construído
-	addi $t8, $zero, 1      # indica que deve-se testar por presença de sinal
-	add  $t9, $zero, $zero	# zera indicador de presença de sinal
+	add  $t3, $zero, $zero	# zera valor da var para inteiro sendo construï¿½do
+	addi $t8, $zero, 1      # indica que deve-se testar por presenï¿½a de sinal
+	add  $t9, $zero, $zero	# zera indicador de presenï¿½a de sinal
 	addi $t2, $t2, 1 	# incrementa contador de escrita 
 	j conversion_loop		
 
 end_conversion_loop:
 	beq $t7, 1, add_int
-	add $s4, $t2, $zero	# armazena em $s4 o número de inteiros escritos
+	add $s4, $t2, $zero	# armazena em $s4 o nï¿½mero de inteiros escritos
 	jr $ra  
 
 print_int_array:
-# $s2 = endereço base do array de inteiros, $s4 = número de inteiros escritos no array
+# $s2 = endereï¿½o base do array de inteiros, $s4 = nï¿½mero de inteiros escritos no array
 	la $a0, new_line
 	li $v0, 4
 	syscall
@@ -369,7 +369,7 @@ loop_print_int_array:
 	lw  $a0, 0($t1)
 	li  $v0, 1
 	syscall
-	la  $a0, new_space	# imprime espaço
+	la  $a0, new_space	# imprime espaï¿½o
 	li  $v0, 4
 	syscall
 	addi $t0, $t0, 1	# decrementa contador
@@ -387,8 +387,8 @@ end_print_int_array:
 	syscall
 	jr $ra
 new_line_windows:
-# retorna 2 se conteúdo em $a0 e $a1 são bytes que indicam nova linha no windows.
-# retorna 0 caso contrário
+# retorna 2 se conteï¿½do em $a0 e $a1 sï¿½o bytes que indicam nova linha no windows.
+# retorna 0 caso contrï¿½rio
 	add  $t0, $a0, -13 
 	beq  $t0, $zero, new_line_windows_lf
 not_new_line_windows_lf:
@@ -401,8 +401,8 @@ new_line_windows_lf:
 	jr   $ra
 
 new_line_unix:
-# retorna 1 se conteúdo em $a0 é um byte que indica nova linha em sistemas unix.
-# retorna 0 caso contrário
+# retorna 1 se conteï¿½do em $a0 ï¿½ um byte que indica nova linha em sistemas unix.
+# retorna 0 caso contrï¿½rio
 	add $t0, $a0, -10
 	bne $t0, $zero, not_new_line_unix_lf
 	add $v0, $zero, 1
@@ -415,7 +415,7 @@ not_new_line_unix_lf:
 #########################################################################
 #########################################################################
 quicksort:
-# $a0 - endereço do primeiro byte do array de int
+# $a0 - endereï¿½o do primeiro byte do array de int
 # $a1 - tamanho do array
 	addi $a2, $a1, -1
 	add  $a1, $zero, $zero
@@ -427,9 +427,9 @@ quicksort:
 	jr   $ra
 
 quicksort_recursion:
-# $a0 - endereço do primeiro byte do array de int
-# $a1 - posição inicial
-# $a2 - posição final
+# $a0 - endereï¿½o do primeiro byte do array de int
+# $a1 - posiï¿½ï¿½o inicial
+# $a2 - posiï¿½ï¿½o final
 	slt  $t0, $a1, $a2	# se  pos inicial < pos final, deve ordenar
 	beqz $t0, end_quicksort_recursion
 	
@@ -445,7 +445,7 @@ quicksort_recursion:
 	lw   $a0,  0($sp)
 	add  $sp, $sp, 16
 	
-	add  $t0, $v0, $zero	# armazena índice da particao  		
+	add  $t0, $v0, $zero	# armazena ï¿½ndice da particao  		
 	
 	add  $t1, $a2, $zero	# salva para uso posterior
 
@@ -477,8 +477,8 @@ end_quicksort_recursion:
 
 particao:
 # particiona o array dado em menor ou igual um pivot ou maior que o mesmo
-# $a0 - Endereço base, $a1 - indíce do primeiro elemento, $a2 - índice do último elemento
-# retorna posicao do divisor (índice do pivot que divide o array em particoes)
+# $a0 - Endereï¿½o base, $a1 - indï¿½ce do primeiro elemento, $a2 - ï¿½ndice do ï¿½ltimo elemento
+# retorna posicao do divisor (ï¿½ndice do pivot que divide o array em particoes)
 
 # $t0 - pivot, $t1 - limite de menores ou iguais ou pivot
 # $t2 - indice para percorrer sub-array
@@ -486,24 +486,24 @@ particao:
 	add  $t0, $t0, $a0	# calcula endereco do pivot
 	lw   $t0, 0($t0)	# armazena pivot 
 	
-	addi $t1, $a1, -1	# inicializa variável do limite de menores ou iguais
+	addi $t1, $a1, -1	# inicializa variï¿½vel do limite de menores ou iguais
 	add  $t2, $a1, $zero	# inicializa indice com primeira posicao do sub array
 	
 particao_loop:
-	slt  $t3, $t2, $a2	# enquanto indice < último ind.
+	slt  $t3, $t2, $a2	# enquanto indice < ï¿½ltimo ind.
 	beq  $t3, $zero, end_particao
 	
 	sll  $t3, $t2,  2	# multiplica indice por 4
 	add  $t3, $t3, $a0	# calcula endereco da posicao no array
 	lw   $t4, 0($t3)	# carrega elemento do array
 	
-	sle  $t5, $t4, $t0	# testa se é menor ou igual ao pivot
-	beq  $t5, $zero, continue_particao_loop # se é maior, continua loop
-	addi $t1, $t1, 1	# senão, incrementa limite de menores ou iguais, pois achou um novo menor ou igual
+	sle  $t5, $t4, $t0	# testa se ï¿½ menor ou igual ao pivot
+	beq  $t5, $zero, continue_particao_loop # se ï¿½ maior, continua loop
+	addi $t1, $t1, 1	# senï¿½o, incrementa limite de menores ou iguais, pois achou um novo menor ou igual
 
 # faz swap
 	sll  $t5, $t1, 2
-	add  $t5, $t5, $a0	# calcula endereço em memoria do limite de menores ou iguais
+	add  $t5, $t5, $a0	# calcula endereï¿½o em memoria do limite de menores ou iguais
 	lw   $t6, 0($t5)	# armazena elemento da posicao
 	sw   $t4, 0($t5)	# substitui um valor
 	sw   $t6, 0($t3)	# substitui outro valor  
@@ -525,4 +525,62 @@ end_particao:
 	
 	add  $v0, $t1, $zero	# armazena para retorno
 
+	jr $ra
+
+
+###########################################################################################
+###########################################################################################
+###########################################################################################
+
+insertion_sort:
+	#$a0 = base do array de inteiros    $a1 = numero de elementos no array de inteiros
+	addi $t0, $zero, 1 
+	add $t1, $zero, $zero
+	add $t2, $zero, $zero
+	add $t3, $zero, $a1
+	# $t0 = i   $t1 = j   $t2 = v   $t3 = fim
+	
+loop_insertion:
+	slt $t4, $t0, $t3 # verifica se i < fim
+	beq $t4, $zero, back # senÃ£o sai do loop
+	
+	sll $t4, $t0, 2 # faz i * 4  para calcular posiÃ§Ã£o do array
+	add $t4, $t4, $a0 #calcula posiÃ§Ã£o do array
+	lw $t2, 0($t4) # salva em v o valor de A[i]
+	add $t1, $zero, $t0 # deixa j igual a i
+	
+	addi $sp, $sp, -4 # aloca posiÃ§Ã£o na pilha
+	sw   $ra, 0($sp) # salva a posiÃ§Ã£o de $ra na pilha
+	
+	jal loop_to_move_insertion
+	
+	lw   $ra,  0($sp) #pega o valor de $ra
+	addi $sp, $sp, 4 # volta o valor da pilha para o original
+	
+	sll $t4, $t1, 2 # faz j * 4 para calcular a posiÃ§Ã£o do array
+	add $t4, $t4, $a0 #pega posiÃ§Ã£o do A[j]
+	sw $t2, 0($t4) # A[j] = v
+	
+	addi $t0, $t0, 1 # i++
+	j loop_insertion
+	
+loop_to_move_insertion:
+	slt $t4, $zero, $t1 # j > 0
+	beq $t4, $zero, back # if j <= 0, termina loop
+	
+	addi $t4, $t1, -1 # $t4 = j - 1
+	sll $t4, $t4, 2 # faz (j-1) * 4 para calcular a posiÃ§Ã£o do array
+	add $t5, $t4, $a0 #calcula posiÃ§Ã£o do array
+	lw $t5, 0($t5) # pega A[j-1]
+	slt $t4, $t2, $t5 # verifica se v < A[j-1]
+	beq $t4, $zero, back # se nÃ£o for, termina o loop
+	
+	sll $t4, $t1, 2  # faz j * 4 para calcular a posiÃ§Ã£o do array
+	add $t4, $t4, $a0 #calcula posiÃ§Ã£o de A[j]
+	sw $t5, 0($t4) #salva A[j-1] em A[j]
+	addi $t1, $t1, -1 # j--
+	
+	j loop_to_move_insertion
+
+back:
 	jr $ra
