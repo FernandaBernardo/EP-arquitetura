@@ -15,6 +15,12 @@ exit_error_msg:
 	.asciiz "Um erro ocorreu. Terminando o programa."
 input_file_name_msg:
 	.asciiz "Digite o nome do seu arquivo: "
+input_sort_msg:	
+	.asciiz "Digite 1 para quick sort e 2 para insertion sort"
+quicksort_msg:
+	.asciiz "\nQuick Sort"
+insertion_sort_msg:
+	.asciiz "\nInsertion Sort"
 file_name: 		# nome do arquivo que ser� colocado pelo usu�rio
 	.asciiz ""	
 array:
@@ -33,15 +39,52 @@ main:
 	jal convert_to_int_array
 	jal print_int_array
 	
-	add $a0, $s2, $zero # base do array de inteiros
-	add $a1, $s4, $zero # numero de elementos no array de inteiros
-	jal insertion_sort
+	jal choose_sort
+	
 	jal print_int_array
 	j exit
+	
+choose_sort:
+	li $v0, 51 #chamada do sistema para abrir dialog de input de int
+	la $a0, input_sort_msg #colocando mensagem a ser exibida no dialog
+	syscall
+	
+	bne $a1, $zero, exit_error #se o resultado de $a1 não for zero é porque deu erro
+	la $t0, 0($a0) #pega o sort escolhido pelo usuário
+	
+	add $a0, $s2, $zero # base do array de inteirquos
+	add $a1, $s4, $zero # numero de elementos no array de inteiros
+	
+	addi $sp, $sp, -4 
+	sw   $ra, 0($sp) #salvando na pilha o $ra, para saber para onde voltar
+
+	addi $t1, $zero, 1 
+	beq $t0, $t1, choose_quick_sort #se a escolha for 1, vai para o quick sort
+	
+	addi $t1, $zero, 2
+	beq $t0, $t1, choose_insertion_sort #se a escolha for 2, vai para insertion sort
+	
+	j exit_error # se não escolheu certo, sai do programa
+	
+choose_quick_sort:
+	jal quicksort
+	
+	lw $ra,  0($sp)
+	add $sp, $sp, 4
+	
+	jr $ra
+
+choose_insertion_sort:	
+	jal insertion_sort
+	
+	lw $ra,  0($sp)
+	add $sp, $sp, 4
+	
+	jr $ra
 
 exit:
 # Termina o programa
-    	li $v0,10       #fim
+    li $v0,10       #fim
 	syscall
 
 exit_error:
@@ -424,6 +467,11 @@ quicksort:
 	jal  quicksort_recursion
 	lw   $ra, 0($sp)
 	addi $sp, $sp, 4
+	
+	li $v0, 4
+	la $a0, quicksort_msg
+	syscall
+	
 	jr   $ra
 
 quicksort_recursion:
@@ -534,6 +582,14 @@ end_particao:
 
 insertion_sort:
 	#$a0 = base do array de inteiros    $a1 = numero de elementos no array de inteiros
+	add $t0, $a0, $zero
+	
+	li $v0, 4
+	la $a0, insertion_sort_msg
+	syscall
+	
+	add $a0, $t0, $zero
+	
 	addi $t0, $zero, 1 
 	add $t1, $zero, $zero
 	add $t2, $zero, $zero
