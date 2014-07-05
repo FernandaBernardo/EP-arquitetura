@@ -49,9 +49,9 @@ public final class InputMaker
 			strb.append( iterator.next() );
 			strb.append( " " );
 			
-			if( printedIntegers%15 == 0){
-				strb.append("\n");
-			}
+			// if( printedIntegers%15 == 0){
+			// 	strb.append("\n");
+			// }
 
 		}
 
