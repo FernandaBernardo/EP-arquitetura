@@ -726,18 +726,20 @@ write_file:
 	
 	add $t0, $v0, $zero	# salva o descritor de arquivo	
 	
-	addi $a0, $zero, 2	# inicializa argumento com 2
+	addi $a0, $zero, 4	# inicializa argumento, numero de bytes a serem alocados
 	li   $v0, 9		# chamada para alocar $a0 bytes no heap de memoria
 	syscall
 	
-	addi $t1, $zero, 13
+	addi $t1, $zero, 13 	# Começa quebra de linha x2
 	sb   $t1, 0($v0)
+	sb   $t1, 2($v0)
 	addi $t1, $zero, 10
 	sb   $t1, 1($v0)
+	sb   $t1, 3($v0)
 	
 	add  $a0, $t0, $zero	
 	add  $a1, $v0, $zero
-	addi $a2, $zero, 2
+	addi $a2, $zero, 4
 	li   $v0, 15
 	syscall	
 	
