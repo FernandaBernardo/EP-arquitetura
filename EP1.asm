@@ -42,6 +42,11 @@ main:
 	jal choose_sort
 	
 	jal print_int_array
+	jal convert_to_byte_array
+	jal print_byte_array
+	
+	jal write_file
+	
 	j exit
 	
 choose_sort:
@@ -242,7 +247,7 @@ read:
 	j read	
 	
 close_file:
-	#Antes de fechar o arquivo, armazena em $s1 o nï¿½mero de bytes lidos na ï¿½ltima iteraï¿½ï¿½o
+	# Antes de terinar a função, armazena em $s1 o nï¿½mero de bytes lidos na ï¿½ltima iteraï¿½ï¿½o
 	add $s1, $v0, $zero
 
 	#Fechamento do arquivo
@@ -428,6 +433,9 @@ end_print_int_array:
 	add $a0, $s4, $zero
 	li $v0, 1
 	syscall
+	la $a0, new_line
+	li $v0, 4
+	syscall  
 	jr $ra
 new_line_windows:
 # retorna 2 se conteï¿½do em $a0 e $a1 sï¿½o bytes que indicam nova linha no windows.
@@ -640,3 +648,88 @@ loop_to_move_insertion:
 
 back:
 	jr $ra
+####################################################################
+####################################################################
+
+convert_to_byte_array:
+	add $a0, $s1, 1		# carrega argumento para funcao de alocacao de memoria, o numero de bytes a serem alocados
+	addi $sp, $sp, -4
+	sw   $ra, 0($sp)
+	jal allocate_memory	
+	lw   $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+
+	add $t0, $zero, $zero 	# inicializa contador, para deslocamento no array de inteiro
+	add $t1, $zero, $zero	# inicializa contador, para deslocamento no array de bytes
+	add $t2, $v0, $zero	# inicializa variável para armazenar a string a ser escrita
+	add $s0, $v0, $zero
+convert_to_byte_array_loop:
+	beq $t0, $s4, end_convert_to_byte_array	# se é do tamanho do array de inteiros, termina
+	sll $t3, $t0, 2		# multiplica por 4, endereçamento por word
+	add $t3, $t3, $s2	# calcula o endereço do elemento atual do array
+		
+	lw  $t3, 0($t3)		# carrega o elemento, o inteiro no caso
+	
+	slt $t4, $t3, $zero	# testa se eh negativo
+	bne $t4, 1, convert_int	# se nao eh, continua
+
+	mul  $t3, $t3, -1	# se eh torna positivo
+	add  $t5, $zero, 45	# adiciona hifen para negativo
+	add  $t6, $s0, $t1	# carrega endereco + deslocamento em array de bytes
+	sb   $t5, 0($t6)	# escreve hifen em array de bytes
+	addi $t1, $t1, 1	# incrementa deslocamento para prox. posicao
+	
+convert_int:
+	li  $t5, 10	
+	
+	slt $t6, $t3, $t5	# se é menor que 10, nada a fazer aqui
+	beq $t6, 1, write_space
+	
+	div  $t3, $t5		# divide por 10 e poe em lo o quociente e em hi o resto
+	
+	mflo $t5		# carrega o quociente, prox valor de casa decimal a ser escrita
+	
+	add  $t6, $s0, $t1	# calcula endereco do prox. byte a ser escrito			
+	addi $t5, $t5, 48	# adiciona base do ASCII
+	sb   $t5, 0($t6)	# poe no array
+	add  $t1, $t1, 1	# incrementa deslocamento do array de byte
+	
+	mfhi $t3
+	j convert_int
+	
+write_space:
+	add  $t6, $s0, $t1	# calcula endereco do prox. byte a ser escrito
+	addi $t5, $t3, 48	# ultimo digito a ser escrito
+	sb   $t5, 0($t6)	# escreve ultimo digito
+	add  $t6, $t6, 1	# calcula endereco do prox. byte a ser escrito
+
+	addi $t5, $zero, 32     # whitespace
+	sb   $t5, 0($t6)	# escreve espaco em branco, o divisor de numeros																													
+	
+	addi $t1, $t1, 2	# incrementa deslocamento no array de byte
+	addi $t0, $t0, 1	# incrementa deslocamento no array de inteiro
+	
+	j convert_to_byte_array_loop
+
+end_convert_to_byte_array:
+	add  $t6, $t6, 1	# calcula endereco do prox. byte a ser escrito
+	add  $t5, $zero, $zero  # terminator
+	sb   $t5, 0($t6)	# escreve espaco em branco, o divisor de numeros
+	jr   $ra
+############################################################################3
+write_file:
+	la   $a0, file_name
+	addi $a1, $zero, 1
+	li   $v0, 13
+	syscall
+	
+	add $a0, $v0, $zero
+	add $a1, $s0, $zero
+	add $a2, $s1, $zero
+	li  $v0, 15
+	syscall
+	li  $v0, 16
+	syscall
+	jr $ra
+	
