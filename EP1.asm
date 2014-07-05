@@ -724,6 +724,8 @@ write_file:
 	li   $v0, 13		# chamada de sistema para abrir o arquivo
 	syscall
 	
+	blt $v0, $zero, exit_error
+	
 	add $t0, $v0, $zero	# salva o descritor de arquivo	
 	
 	addi $a0, $zero, 4	# inicializa argumento, numero de bytes a serem alocados
@@ -731,24 +733,29 @@ write_file:
 	syscall
 	
 	addi $t1, $zero, 13 	# Começa quebra de linha x2
-	sb   $t1, 0($v0)
-	sb   $t1, 2($v0)
-	addi $t1, $zero, 10
-	sb   $t1, 1($v0)
-	sb   $t1, 3($v0)
+	sb   $t1, 0($v0)	# Carriage return
+	sb   $t1, 2($v0)	# Carriage return
+	addi $t1, $zero, 10	
+	sb   $t1, 1($v0)	# Line feed
+	sb   $t1, 3($v0)	# Line feed
+	# Termina de quebrar a linha x2
 	
-	add  $a0, $t0, $zero	
-	add  $a1, $v0, $zero
-	addi $a2, $zero, 4
-	li   $v0, 15
+	add  $a0, $t0, $zero	# armazena descritor de arquivo onde escrevera
+	add  $a1, $v0, $zero	# armazena endereco recem alocado onde foram inseridas as quebras de linha
+	addi $a2, $zero, 4	# armazena quantidade de bytes para escrever (mesma que alocou para as quebras)
+	li   $v0, 15		# chamada para escrita
 	syscall	
 	
-	add $a1, $s0, $zero
-	add $a2, $s1, $zero
-	li  $v0, 15
+	blt $v0, $zero, exit_error
+	
+	add $a1, $s0, $zero	# armazena endereco base do array de bytes, ordenado
+	add $a2, $s1, $zero	# armazena tamanho do array de bytes
+	li  $v0, 15		# chamada para escrita
 	syscall	
 	
-	li  $v0, 16
+	blt $v0, $zero, exit_error
+
+	li  $v0, 16		# fecha o arquivo
 	syscall
 	jr $ra
 	
