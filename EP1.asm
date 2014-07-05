@@ -719,16 +719,33 @@ end_convert_to_byte_array:
 	jr   $ra
 ############################################################################3
 write_file:
-	la   $a0, file_name
-	addi $a1, $zero, 1
-	li   $v0, 13
+	la   $a0, file_name	# Carrrega nome do arquivo
+	addi $a1, $zero, 9	# Abre o arquivo para no modo de append
+	li   $v0, 13		# chamada de sistema para abrir o arquivo
 	syscall
 	
-	add $a0, $v0, $zero
+	add $t0, $v0, $zero	# salva o descritor de arquivo	
+	
+	addi $a0, $zero, 2	# inicializa argumento com 2
+	li   $v0, 9		# chamada para alocar $a0 bytes no heap de memoria
+	syscall
+	
+	addi $t1, $zero, 13
+	sb   $t1, 0($v0)
+	addi $t1, $zero, 10
+	sb   $t1, 1($v0)
+	
+	add  $a0, $t0, $zero	
+	add  $a1, $v0, $zero
+	addi $a2, $zero, 2
+	li   $v0, 15
+	syscall	
+	
 	add $a1, $s0, $zero
 	add $a2, $s1, $zero
 	li  $v0, 15
-	syscall
+	syscall	
+	
 	li  $v0, 16
 	syscall
 	jr $ra
