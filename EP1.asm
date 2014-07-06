@@ -247,7 +247,7 @@ read:
 	j read	
 	
 close_file:
-	# Antes de terinar a função, armazena em $s1 o nï¿½mero de bytes lidos na ï¿½ltima iteraï¿½ï¿½o
+	# Antes de terinar a funï¿½ï¿½o, armazena em $s1 o nï¿½mero de bytes lidos na ï¿½ltima iteraï¿½ï¿½o
 	add $s1, $v0, $zero
 
 	#Fechamento do arquivo
@@ -662,12 +662,12 @@ convert_to_byte_array:
 
 	add $t0, $zero, $zero 	# inicializa contador, para deslocamento no array de inteiro
 	add $t1, $zero, $zero	# inicializa contador, para deslocamento no array de bytes
-	add $t2, $v0, $zero	# inicializa variável para armazenar a string a ser escrita
+	add $t2, $v0, $zero	# inicializa variï¿½vel para armazenar a string a ser escrita
 	add $s0, $v0, $zero
 convert_to_byte_array_loop:
-	beq $t0, $s4, end_convert_to_byte_array	# se é do tamanho do array de inteiros, termina
-	sll $t3, $t0, 2		# multiplica por 4, endereçamento por word
-	add $t3, $t3, $s2	# calcula o endereço do elemento atual do array
+	beq $t0, $s4, end_convert_to_byte_array	# se ï¿½ do tamanho do array de inteiros, termina
+	sll $t3, $t0, 2		# multiplica por 4, endereï¿½amento por word
+	add $t3, $t3, $s2	# calcula o endereï¿½o do elemento atual do array
 		
 	lw  $t3, 0($t3)		# carrega o elemento, o inteiro no caso
 	
@@ -681,41 +681,77 @@ convert_to_byte_array_loop:
 	addi $t1, $t1, 1	# incrementa deslocamento para prox. posicao
 	
 convert_int:
-	li  $t5, 10	
+	li $t4, 1 #inicializa potencia como 1
+	li $t5, 10 #faremos tudo com base nas potencias de 10	
 	
-	slt $t6, $t3, $t5	# se é menor que 10, nada a fazer aqui
-	beq $t6, 1, write_space
+	addi $sp, $sp, -4
+	sw   $ra, 0($sp)
+	jal calc_pot
+	lw   $ra, 0($sp)
+	addi $sp, $sp, 4
 	
-	div  $t3, $t5		# divide por 10 e poe em lo o quociente e em hi o resto
+	j get_numbers
 	
-	mflo $t5		# carrega o quociente, prox valor de casa decimal a ser escrita
-	
-	add  $t6, $s0, $t1	# calcula endereco do prox. byte a ser escrito			
-	addi $t5, $t5, 48	# adiciona base do ASCII
-	sb   $t5, 0($t6)	# poe no array
+get_numbers:
+	blez $t4, write_space # se potencia <= 0 acaba o loop
+	slt $t6, $t3, $t4 #verifica se o numero Ã© menor que a potencia
+	beq $t6, $zero, write_quotient #se nÃ£o for menor, imprime o quociente
+	beq $t6, 1, write_zero # se for menor, imprime um zero
+
+
+write_zero:
+    add  $t7, $s0, $t1	# calcula endereco do prox. byte a ser escrito	
+	addi $t6, $zero, 48	# adiciona base do ASCII para digito zero
+	sb   $t6, 0($t7)	# poe no array
 	add  $t1, $t1, 1	# incrementa deslocamento do array de byte
 	
-	mfhi $t3
-	j convert_int
+	div $t4, $t5 #divide potencia por 10
+	mflo $t4
 	
+	j get_numbers
+	
+write_quotient:
+	div $t3, $t4 #divide o nÃºmero pela potencia e coloca em lo o quociente e em hi o resto
+	mflo $t6 #quociente
+    mfhi $t3 # atualiza o nÃºmero para o resto entre o numero antigo e a potencia
+    
+    add  $t7, $s0, $t1	# calcula endereco do prox. byte a ser escrito	
+	addi $t6, $t6, 48	# adiciona base do ASCII
+	sb   $t6, 0($t7)	# poe no array
+	add  $t1, $t1, 1	# incrementa deslocamento do array de byte
+	
+	div $t4, $t5 #divide potencia por 10
+	mflo $t4
+	
+	j get_numbers
+	
+calc_pot:
+	div $t3, $t4 #divide o nÃºmero pela potencia e coloca em lo o quociente
+	mflo $t6
+	slt $t6, $t6, $t5 #verifica se o nÃºmero / potencia Ã© menor que 10
+	beq $t6, 1, back_to_convert_int
+	
+	mul $t4, $t4, $t5 # faz potencia *= 10
+	
+	j calc_pot
+	
+back_to_convert_int:
+	jr $ra	
+
 write_space:
 	add  $t6, $s0, $t1	# calcula endereco do prox. byte a ser escrito
-	addi $t5, $t3, 48	# ultimo digito a ser escrito
-	sb   $t5, 0($t6)	# escreve ultimo digito
-	add  $t6, $t6, 1	# calcula endereco do prox. byte a ser escrito
-
-	addi $t5, $zero, 32     # whitespace
-	sb   $t5, 0($t6)	# escreve espaco em branco, o divisor de numeros																													
+	addi $t7, $zero, 32	# ultimo digito a ser escrito
+	sb   $t7, 0($t6)	# escreve ultimo digito
 	
-	addi $t1, $t1, 2	# incrementa deslocamento no array de byte
+	addi $t1, $t1, 1	# incrementa deslocamento no array de byte
 	addi $t0, $t0, 1	# incrementa deslocamento no array de inteiro
 	
 	j convert_to_byte_array_loop
 
 end_convert_to_byte_array:
 	add  $t6, $t6, 1	# calcula endereco do prox. byte a ser escrito
-	add  $t5, $zero, $zero  # terminator
-	sb   $t5, 0($t6)	# escreve espaco em branco, o divisor de numeros
+	add  $t7, $zero, $zero  # terminator
+	sb   $t7, 0($t6)	# escreve espaco em branco, o divisor de numeros
 	jr   $ra
 ############################################################################3
 write_file:
@@ -732,7 +768,7 @@ write_file:
 	li   $v0, 9		# chamada para alocar $a0 bytes no heap de memoria
 	syscall
 	
-	addi $t1, $zero, 13 	# Começa quebra de linha x2
+	addi $t1, $zero, 13 	# Comeï¿½a quebra de linha x2
 	sb   $t1, 0($v0)	# Carriage return
 	sb   $t1, 2($v0)	# Carriage return
 	addi $t1, $zero, 10	
@@ -758,4 +794,3 @@ write_file:
 	li  $v0, 16		# fecha o arquivo
 	syscall
 	jr $ra
-	
