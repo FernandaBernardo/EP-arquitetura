@@ -39,7 +39,13 @@ main:
 	jal convert_to_int_array
 	jal print_int_array
 	
-	jal choose_sort
+	jal type_of_sort
+	
+	add $a0, $s2, $zero # base do array de inteiros
+	add $a1, $s4, $zero # numero de elementos no array de inteiros
+	add $a3, $v0, $zero #pega o sort escolhido pelo usuário
+	
+	jal ordena
 	
 	jal print_int_array
 	jal convert_to_byte_array
@@ -49,25 +55,26 @@ main:
 	
 	j exit
 	
-choose_sort:
+type_of_sort: 
 	li $v0, 51 #chamada do sistema para abrir dialog de input de int
 	la $a0, input_sort_msg #colocando mensagem a ser exibida no dialog
 	syscall
 	
 	bne $a1, $zero, exit_error #se o resultado de $a1 não for zero é porque deu erro
-	la $t0, 0($a0) #pega o sort escolhido pelo usuário
 	
-	add $a0, $s2, $zero # base do array de inteirquos
-	add $a1, $s4, $zero # numero de elementos no array de inteiros
+	add $v0, $a0, $zero #colocando no registrador de retorno o resultado do tipo de ordenação escolhido
 	
+	jr $ra
+	
+ordena:	
 	addi $sp, $sp, -4 
 	sw   $ra, 0($sp) #salvando na pilha o $ra, para saber para onde voltar
 
 	addi $t1, $zero, 1 
-	beq $t0, $t1, choose_quick_sort #se a escolha for 1, vai para o quick sort
+	beq $a3, $t1, choose_quick_sort #se a escolha for 1, vai para o quick sort
 	
 	addi $t1, $zero, 2
-	beq $t0, $t1, choose_insertion_sort #se a escolha for 2, vai para insertion sort
+	beq $a3, $t1, choose_insertion_sort #se a escolha for 2, vai para insertion sort
 	
 	j exit_error # se não escolheu certo, sai do programa
 	
@@ -659,11 +666,11 @@ convert_to_byte_array:
 	lw   $ra, 0($sp)
 	addi $sp, $sp, 4
 	
-
 	add $t0, $zero, $zero 	# inicializa contador, para deslocamento no array de inteiro
 	add $t1, $zero, $zero	# inicializa contador, para deslocamento no array de bytes
 	add $t2, $v0, $zero	# inicializa vari�vel para armazenar a string a ser escrita
 	add $s0, $v0, $zero
+	
 convert_to_byte_array_loop:
 	beq $t0, $s4, end_convert_to_byte_array	# se � do tamanho do array de inteiros, termina
 	sll $t3, $t0, 2		# multiplica por 4, endere�amento por word
