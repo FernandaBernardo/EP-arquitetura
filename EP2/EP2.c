@@ -1,5 +1,31 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <omp.h>
+
+int *abre_arquivo (char* nome_arquivo) {
+	FILE *entrada = fopen(nome_arquivo, "r");
+	
+	if (!entrada) {
+		printf("Arquivo não encontrado!\n");
+		exit(0);
+	};
+
+	// printf("\n");
+
+	int aux = 0;
+	static int array[10];
+	while (!feof(entrada)) {
+		fscanf(entrada, "%d", &array[aux]);
+		// printf("%d ", array[aux]);
+		aux++;
+	}
+
+	// printf("\n\n");
+
+	fclose(entrada);
+
+	return array;
+}
 
 void imprime_array(int A[], int tam) {
 	int i;
@@ -54,10 +80,15 @@ void quick_sequencial (int A[], int esquerdo, int direito) {
 	}
 }
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char *argv[]) {
+	int* array;
+	if(argv[1]) array = abre_arquivo(argv[1]);
+	else return 0;
+
 	printf("Insertion Sort:\n");
-	int a[] = {4,2,1,3,5,10,7,9,8,6};
-	int tam = sizeof(a)/sizeof(int);
+	int* a = array;
+	int tam = sizeof(a);
+	printf("%d\n", tam);
 	imprime_array(a, tam);
 	insertion_sequencial(a, tam);
 	imprime_array(a, tam);
@@ -67,5 +98,6 @@ int main(int argc, char const *argv[]) {
 	imprime_array(b, tam);
 	quick_sequencial(b, 0, tam-1);
 	imprime_array(b, sizeof(b)/sizeof(int));
+
 	return 0;
 }
