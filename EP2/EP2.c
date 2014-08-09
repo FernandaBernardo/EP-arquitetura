@@ -2,19 +2,22 @@
 #include <stdlib.h>
 #include <omp.h>
 
-int *abre_arquivo (char* nome_arquivo) {
-	FILE *entrada = fopen(nome_arquivo, "r");
+int* abre_arquivo ( char* nome_arquivo ) {
+	FILE *entrada = fopen( nome_arquivo, "r" );
 	
-	if (!entrada) {
-		printf("Arquivo não encontrado!\n");
+	fprintf(stdout, "Here\n");
+	if ( ! entrada ) {
+		fprintf(stderr, "ERROR: Arquivo não encontrado!\n");
 		exit(0);
 	};
 
 	// printf("\n");
 
 	int aux = 0;
-	static int array[10];
-	while (!feof(entrada)) {
+	
+	int* array = malloc(sizeof(int)*10);
+	
+	while ( ! feof( entrada ) ) {
 		fscanf(entrada, "%d", &array[aux]);
 		// printf("%d ", array[aux]);
 		aux++;
@@ -82,7 +85,9 @@ void quick_sequencial (int A[], int esquerdo, int direito) {
 
 int main(int argc, char *argv[]) {
 	int* array;
-	if(argv[1]) array = abre_arquivo(argv[1]);
+	printf("argv[1] = %s\n", argv[1]);
+	
+	if( argv[1] ) array = abre_arquivo(argv[1]);
 	else return 0;
 
 	printf("Insertion Sort:\n");
