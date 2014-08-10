@@ -16,7 +16,7 @@ void imprime_array(int* array, size_t size) {
 		if( i!=0 && i%10 == 0 ){
 			printf("\n");
 		}
-		printf("%d ", array[i]);
+		printf("%d\t", array[i]);
 	}
 	printf("\n-----\n");
 }
