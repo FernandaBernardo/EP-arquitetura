@@ -171,11 +171,13 @@ int main(int argc, char *argv[]) {
 	insertion_sequencial(array, size );
 	imprime_array(array, size);
 
-	// int* array2 = le_array_inteiros( file_name, &size );
+	free(array);
+
+	array = le_array_inteiros( file_name, &size );
 	printf("Quick Sort:\n");
 	imprime_array(array, size);
-	// quick_sequencial(array, 0, size - 1);
-	// imprime_array(array, size);
+	quick_sequencial(array, 0, size - 1);
+	imprime_array(array, size);
 
 	exit( EXIT_SUCCESS );
 }
