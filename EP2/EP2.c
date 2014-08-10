@@ -6,6 +6,7 @@
 
 #define false 0
 #define true 1
+#define QUICK_INSERTION 1
 
 //Variáveis globais
 size_t int_array_size = 0;
@@ -198,36 +199,21 @@ void sequencial_quicksort (int A[], int esquerdo, int direito) {
 	}
 }
 
-void parallel_quicksort (int A[], int left, int right, unsigned int num_threads ) {
+void parallel_quicksort (int A[], int left, int right ) {
 	if (left < right) {
-		if(num_threads > 1) {
-		
-			int q = partition_quicksort(A, left, right);
+		int q = partition_quicksort(A, left, right);
 
-			#pragma omp parallel sections num_threads( 4 )
+		#pragma omp parallel sections num_threads( 4 )
+		{	
+			#pragma omp section
 			{	
-				#pragma omp section
-				{	
-					if(q  - left  > 1000){
-						num_threads--;
-						parallel_quicksort(A, left, q - 1, num_threads );
-					} else {
-						sequencial_quicksort(A, left, q - 1);
-					}
-				}
-
-				#pragma omp section
-				{
-					if( right - q  > 1000 ){
-						num_threads--;	
-						parallel_quicksort(A, q + 1, right, num_threads );
-					} else {
-						sequencial_quicksort(A, q + 1, right);
-					}					
-				}
+				parallel_quicksort(A, left, q - 1 );
 			}
-		} else {
-			sequencial_quicksort(A, left, right);
+
+			#pragma omp section
+			{
+				parallel_quicksort(A, q + 1, right);
+			}					
 		}
 	}
 }
@@ -253,52 +239,60 @@ int main(int argc, char *argv[]) {
 	int* array;
 	double start, end;
 
-	array = le_array_inteiros( file_name, &size );
-	printf("\nQuickSort Sequencial:\nOrdering %d elements\n", (int)size);
-	imprime_array(array, size);
-	start = omp_get_wtime();
-	sequencial_quicksort(array, 0, size - 1);
-	end = omp_get_wtime();
-	printf("Elapsed time: %f sec.\n\n", (end-start));
-	// imprime_array(array, size);
-	check_array_is_ordered( array, size );
-	free(array);
+	if(QUICK_INSERTION){
+	
+		array = le_array_inteiros( file_name, &size );
+		printf("\nQuickSort Sequencial:\nOrdering %d elements\n", (int)size);
+		// imprime_array(array, size);
+		start = omp_get_wtime();
+		sequencial_quicksort(array, 0, size - 1);
+		end = omp_get_wtime();
+		printf("Elapsed time: %f sec.\n\n", (end-start));
+		// imprime_array(array, size);
+		check_array_is_ordered( array, size );
+		free(array);
 
 
-	array = le_array_inteiros( file_name, &size );
-	printf("\nQuickSort Paralelizado:\nOrdering %d elements\n", (int)size);
-	// imprime_array(array, size);
-	start = omp_get_wtime();
-	parallel_quicksort(array, 0, size - 1, omp_get_max_threads());
-	end = omp_get_wtime();
-	printf("Elapsed time: %f sec.\n\n", (end-start));
-	// imprime_array(array, size);
-	check_array_is_ordered( array, size );
-	free(array);
+		array = le_array_inteiros( file_name, &size );
+		printf("\nQuickSort Paralelizado:\nOrdering %d elements\n", (int)size);
+		// imprime_array(array, size);
+		start = omp_get_wtime();
+		parallel_quicksort(array, 0, size - 1);
+		end = omp_get_wtime();
+		printf("Elapsed time: %f sec.\n\n", (end-start));
+		// imprime_array(array, size);
+		check_array_is_ordered( array, size );
+		free(array);
+		
+	}
 
 	// --------------------------------------------------------------------------------------------------
 
-	array = le_array_inteiros( file_name, &size );
-	printf("\nInsertion Sort Sequencial:\nOrdering %d elements\n", (int)size);
-	// imprime_array(array, size);
-	start = omp_get_wtime();
-	insertion_sequencial(array, 0, size - 1 );
-	end = omp_get_wtime();
-	printf("Elapsed time: %f sec.\n\n", (end-start));
-	// imprime_array(array, size);
-	check_array_is_ordered( array, size );
-	free(array);
+	if( !QUICK_INSERTION ){
+		
+		array = le_array_inteiros( file_name, &size );
+		printf("\nInsertion Sort Sequencial:\nOrdering %d elements\n", (int)size);
+		// imprime_array(array, size);
+		start = omp_get_wtime();
+		insertion_sequencial(array, 0, size - 1 );
+		end = omp_get_wtime();
+		printf("Elapsed time: %f sec.\n\n", (end-start));
+		// imprime_array(array, size);
+		check_array_is_ordered( array, size );
+		free(array);
 
-	array = le_array_inteiros( file_name, &size);
-	printf("\nInsertion Sort Paralelizado:\nOrdering %d elements\n", (int)size);
-	// imprime_array(array, size);
-	start = omp_get_wtime();
-	insertion_paralelo(array, size);
-	end = omp_get_wtime();
-	printf("Elapsed time: %f sec.\n\n", (end-start));
-	// imprime_array(array, size);
-	check_array_is_ordered( array, size );
-	free(array);
+		array = le_array_inteiros( file_name, &size);
+		printf("\nInsertion Sort Paralelizado:\nOrdering %d elements\n", (int)size);
+		// imprime_array(array, size);
+		start = omp_get_wtime();
+		insertion_paralelo(array, size);
+		end = omp_get_wtime();
+		printf("Elapsed time: %f sec.\n\n", (end-start));
+		// imprime_array(array, size);
+		check_array_is_ordered( array, size );
+		free(array);		
+		
+	}
 
 	exit( EXIT_SUCCESS );
 }
