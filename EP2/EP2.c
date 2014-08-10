@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <omp.h>
+#include <time.h>
 
 #define false 0
 #define true 1
@@ -13,10 +14,22 @@ size_t int_array_size = 0;
 void imprime_array(int* array, size_t size) {
 	int i;
 	for (i = 0; i < size; i++) {
-		if( i!=0 && i%10 == 0 ){
-			printf("\n");
-		}
-		printf("%d\t", array[i]);
+		// if( i!=0 && i%10 == 0 ){
+			// printf("\n");
+		// }
+		printf("%d ", array[i]);
+	}
+	printf("\n-----\n");
+}
+
+/* Imprime de 10 em 10 elementos do array */
+void imprime_array_from(int* array, int start, int end) {
+	int i;
+	for (i = start; i <= end; i++) {
+		// if( i!=0 && i%10 == 0 ){
+			// printf("\n");
+		// }
+		printf("%d ", array[i]);
 	}
 	printf("\n-----\n");
 }
@@ -27,8 +40,6 @@ int* expand_array( int* original, size_t original_size, size_t new_size ){
 		fprintf( stderr, "ERROR: Argumento invalido. O novo tamanho do array deve ser maior que o antigo.\n");
 		exit( EXIT_FAILURE );
 	}
-
-	printf("expanding array from %d to %d\n", (int)original_size, (int)new_size);
 
 	int* expanded_array;
 
@@ -65,7 +76,7 @@ int* expand_array( int* original, size_t original_size, size_t new_size ){
 }
 
 int* le_array_inteiros( char*  nome_arquivo, size_t* size ) {
-
+	printf("Reading input file %s\n", nome_arquivo );
 	FILE *entrada = fopen( nome_arquivo, "rb" );
 	
 	if ( entrada == NULL ) {
@@ -109,6 +120,8 @@ int* le_array_inteiros( char*  nome_arquivo, size_t* size ) {
 	fclose(entrada);
 	
 	(*size) = index+1;
+
+	printf("%s was read.\n", nome_arquivo);
 	return array;
 }
 
@@ -126,7 +139,7 @@ void insertion_sequencial (int A[], int tam) {
 	}
 }
 
-int particao_quick_sequencial(int A[], int esquerdo, int direito) {
+int partition_quicksort(int A[], int esquerdo, int direito) {
 	int x, i, j, temp;
 
 	x = A[direito]; // pivo
@@ -151,33 +164,90 @@ int particao_quick_sequencial(int A[], int esquerdo, int direito) {
 
 void quick_sequencial (int A[], int esquerdo, int direito) {
 	if (esquerdo < direito) {
-		int q = particao_quick_sequencial(A, esquerdo, direito);
+		int q = partition_quicksort(A, esquerdo, direito);
 		quick_sequencial(A, esquerdo, q - 1);
 		quick_sequencial(A, q + 1, direito);
 	}
 }
 
+void parallel_quicksort (int A[], int left, int right) {
+	if (left < right) {
+
+		int q = partition_quicksort(A, left, right);
+
+		if( ( right - (q+1) + 1 > 500) && ( (q-1) - left + 1> 500) ) {
+
+			#pragma omp parallel sections
+			{	
+				#pragma omp section
+				{
+					parallel_quicksort(A, left, q - 1);
+				}
+
+				#pragma omp section
+				{
+					parallel_quicksort(A, q + 1, right);
+				}
+			}
+		} else {
+			quick_sequencial(A, left, q - 1);
+			quick_sequencial(A, q + 1, right);
+		}
+	}
+}
+
+void check_array_is_ordered(int* array, size_t size){
+	int i;
+	for (i = 1; i < size; i++)
+	{
+		if(array[i-1] > array[i]){
+			printf("Wrong: %d antes de %d \n", array[i-1], array[i]);
+		}
+	}
+
+}
+
 int main(int argc, char *argv[]) {
 
 	if( argc <= 1 ) {
+		printf("ERROR: No input file\n");
 		exit(EXIT_FAILURE);
 	} 
 	size_t size;
 	char* file_name = argv[1];
-	int* array = le_array_inteiros( file_name, &size );
+	int* array;
 
-	printf("Insertion Sort:\n");
-	imprime_array(array, size);
-	insertion_sequencial(array, size );
-	imprime_array(array, size);
+	// array = le_array_inteiros( file_name, &size );
+	// printf("\nInsertion Sort Sequencial:\n");
+	// imprime_array(array, size);
+	// insertion_sequencial(array, size );
+	// imprime_array(array, size);
+	// check_array_is_ordered( array, size );
+	// free(array);
 
+	double start, end;
+	array = le_array_inteiros( file_name, &size );
+	printf("\nQuick Sort Sequencial:\n");
+	// imprime_array(array, size);
+	start = omp_get_wtime();
+	quick_sequencial(array, 0, size - 1);
+	end = omp_get_wtime();
+	printf("Elapsed time: %f sec.\n\n", (end-start));
+	// imprime_array(array, size);
+	check_array_is_ordered( array, size );
 	free(array);
 
+
 	array = le_array_inteiros( file_name, &size );
-	printf("Quick Sort:\n");
-	imprime_array(array, size);
-	quick_sequencial(array, 0, size - 1);
-	imprime_array(array, size);
+	printf("\nQuick Sort Paralelizado:\n");
+	// imprime_array(array, size);
+	start = omp_get_wtime();
+	parallel_quicksort(array, 0, size - 1);
+	end = omp_get_wtime();
+	printf("Elapsed time: %f sec.\n\n", (end-start));
+	// imprime_array(array, size);
+	check_array_is_ordered( array, size );
+	free(array);
 
 	exit( EXIT_SUCCESS );
 }
