@@ -11,7 +11,7 @@
 //Variáveis globais
 size_t int_array_size = 0;
 
-/* Imprime de 10 em 10 elementos do array */
+/* Imprime em linha os elementos do array */
 void imprime_array(int* array, size_t size) {
 	int i;
 	for (i = 0; i < size; i++) {
@@ -23,7 +23,7 @@ void imprime_array(int* array, size_t size) {
 	printf("\n-----\n");
 }
 
-/* Imprime de 10 em 10 elementos do array */
+/* Imprime em linha os elementos do array */
 void imprime_array_from(int* array, int start, int end) {
 	int i;
 	for (i = start; i <= end; i++) {
@@ -83,7 +83,7 @@ int* read_int_array( char*  nome_arquivo, size_t* size ) {
 	FILE *entrada = fopen( nome_arquivo, "rb" );
 	
 	if ( entrada == NULL ) {
-		fprintf(stderr, "ERROR: Arquivo não encontrado!\n");
+		perror("ERROR: an error occurred while opening the input file :\n");
 		exit(EXIT_FAILURE);
 	};
 
@@ -96,11 +96,11 @@ int* read_int_array( char*  nome_arquivo, size_t* size ) {
 	if( array == NULL){
 		int size_to_print = array_size;
 		fprintf(stderr, "ERROR: Memoria insuficiente para alocar array de %d inteiros. \n", size_to_print);
+		perror("Error message:");
 		exit(EXIT_FAILURE);
 	}
 
 	while( true ){
-
 
 		int aux = 0;
 		int read_elements = fscanf( entrada, "%d", &aux );
@@ -222,8 +222,8 @@ int parallel_partition_quicksort(int* array, unsigned int left, unsigned int rig
 	unsigned int i, j, pivot_position;
 
 	// pivot_position = median_of_three_pivot(array, left, right);// testar com outros valores de pivot
-	pivot_position = right;
-	// pivot_position = left + ( rand() % (right-left+1) );
+	// pivot_position = right;
+	pivot_position = left + ( rand() % (right-left+1) );
 	x = array[pivot_position]; // pivo
 	i = left - 1;
 
@@ -279,15 +279,28 @@ void parallel_quicksort (int* array, int left, int right ) {
 	}
 }
 
-void check_array_is_ordered(int* array, size_t size){
-	int i;
-	for (i = 1; i < size; i++)
+/* 
+Testa se o array do argumento está ordenado de forma crescente. 
+O teste tem complexidade de O(n^2), então é bem custoso para arrays grandes.
+Deve ser usado quando não faz diferença o tempo de execução pro usuário.
+*/
+void check_array_is_sorted(int* array, size_t size){
+	printf("Sanity test: checking if array is sorted...\n");
+	int i, j;
+	double start = omp_get_wtime();
+	#pragma omp parallel private (i,j)
 	{
-		if(array[i-1] > array[i]){
-			printf("Wrong: %d antes de %d \n", array[i-1], array[i]);
+		#pragma omp for
+		for (i = size-1; i > -1; i--)
+		{
+			for( j=0; j < i ; j++ )
+				if( array[j] > array[i] )
+					printf("Wrong: %d antes de %d \n", array[j], array[i]);
 		}
 	}
 
+	printf("Sanity test: sort checking has ended.\n");
+	printf("Elapsed time testing: %f sec.\n", omp_get_wtime() - start );
 }
 
 int main(int argc, char *argv[]) {
@@ -296,35 +309,34 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	} 
 	size_t size;
-	char* file_name = argv[1];
 	int* array;
+	char* file_name = argv[1];
 	double start, end;
+	
 
 	if(QUICK_INSERTION){
 	
 		array = read_int_array( file_name, &size );
-		printf("\nQuickSort Sequencial:\nOrdering %d elements\n", (int)size);
+		printf("\n\n\nSequential QuickSort:\nOrdering %d elements\n", (int)size);
 		// imprime_array(array, size);
 		start = omp_get_wtime();
 		sequencial_quicksort(array, 0, size - 1);
 		end = omp_get_wtime();
 		printf("Elapsed time: %f sec.\n\n", (end-start));
 		// imprime_array(array, size);
-		check_array_is_ordered( array, size );
-		free(array);
-
+		// check_array_is_sorted( array, size );
+		free( array );
 
 		array = read_int_array( file_name, &size );
-		printf("\nQuickSort Paralelizado:\nOrdering %d elements\n", (int)size);
+		printf("\n\nParallel QuickSort:\nOrdering %d elements\n", (int)size);
 		// imprime_array(array, size);
 		start = omp_get_wtime();
 		parallel_quicksort(array, 0, size - 1);
 		end = omp_get_wtime();
 		printf("Elapsed time: %f sec.\n\n", (end-start));
 		// imprime_array(array, size);
-		check_array_is_ordered( array, size );
+		// check_array_is_sorted( array, size );
 		free(array);
-		
 	}
 
 	// --------------------------------------------------------------------------------------------------
@@ -339,10 +351,10 @@ int main(int argc, char *argv[]) {
 		end = omp_get_wtime();
 		printf("Elapsed time: %f sec.\n\n", (end-start));
 		// imprime_array(array, size);
-		check_array_is_ordered( array, size );
-		free(array);
+		// check_array_is_sorted( array, size );
+		free(array);		
 
-		array = read_int_array( file_name, &size);
+		array = read_int_array( file_name, &size );
 		printf("\nInsertion Sort Paralelizado:\nOrdering %d elements\n", (int)size);
 		// imprime_array(array, size);
 		start = omp_get_wtime();
@@ -350,9 +362,8 @@ int main(int argc, char *argv[]) {
 		end = omp_get_wtime();
 		printf("Elapsed time: %f sec.\n\n", (end-start));
 		// imprime_array(array, size);
-		check_array_is_ordered( array, size );
+		// check_array_is_sorted( array, size );
 		free(array);		
-
 	}
 
 	exit( EXIT_SUCCESS );
