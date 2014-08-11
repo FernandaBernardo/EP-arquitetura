@@ -79,7 +79,7 @@ int* expand_array( int* original, size_t original_size, size_t new_size ){
 	return expanded_array;
 }
 
-int* le_array_inteiros( char*  nome_arquivo, size_t* size ) {
+int* read_int_array( char*  nome_arquivo, size_t* size ) {
 	FILE *entrada = fopen( nome_arquivo, "rb" );
 	
 	if ( entrada == NULL ) {
@@ -199,21 +199,82 @@ void sequencial_quicksort (int A[], int esquerdo, int direito) {
 	}
 }
 
-void parallel_quicksort (int A[], int left, int right ) {
-	if (left < right) {
-		int q = partition_quicksort(A, left, right);
+int median_of_three_pivot(int A[], unsigned int start, unsigned int end){
+	int middle, x, y, z;
+	middle = end+start/2;
 
-		#pragma omp parallel sections num_threads( 4 )
+	x = A[start];
+	z = A[end];
+	y = A[middle];
+
+	if( x < y ) {
+		
+		if( y < z) return middle;
+		return end;
+
+	} else if ( x < z) return start;
+
+	return end;
+}
+
+int parallel_partition_quicksort(int* array, unsigned int left, unsigned int right) {
+	int x, temp;
+	unsigned int i, j, pivot_position;
+
+	// pivot_position = median_of_three_pivot(array, left, right);// testar com outros valores de pivot
+	pivot_position = right;
+	// pivot_position = left + ( rand() % (right-left+1) );
+	x = array[pivot_position]; // pivo
+	i = left - 1;
+
+	temp = array[right];
+	array[right] = x;	
+	array[pivot_position] = temp;
+
+	// #pragma omp parallel for
+	for (j = left; j <= right - 1; ++j) {
+		if (array[j] <= x) {
+			i++;
+			// trocar
+			temp = array[i];
+			array[i] = array[j];
+			array[j] = temp;
+		}
+	}
+
+	// reposicionar o pivo
+	pivot_position = i + 1;
+	temp = array[pivot_position];
+	array[pivot_position] = array[right];
+	array[right] = temp;
+	return pivot_position;
+}
+
+void internal_parallel_quicksort(int* array, int left, int right ) {
+	if (left < right) {
+		int q = parallel_partition_quicksort(array, left, right);
+
+		internal_parallel_quicksort(array, left, q - 1 );
+		internal_parallel_quicksort(array, q + 1, right);
+	}
+}
+
+void parallel_quicksort (int* array, int left, int right ) {
+	if (left < right) {
+
+		int q = parallel_partition_quicksort(array, left, right);
+
+		#pragma omp parallel sections
 		{	
 			#pragma omp section
-			{	
-				parallel_quicksort(A, left, q - 1 );
+			{
+				internal_parallel_quicksort(array, left, q - 1 );
 			}
 
 			#pragma omp section
 			{
-				parallel_quicksort(A, q + 1, right);
-			}					
+				internal_parallel_quicksort(array, q + 1, right);
+			}
 		}
 	}
 }
@@ -241,7 +302,7 @@ int main(int argc, char *argv[]) {
 
 	if(QUICK_INSERTION){
 	
-		array = le_array_inteiros( file_name, &size );
+		array = read_int_array( file_name, &size );
 		printf("\nQuickSort Sequencial:\nOrdering %d elements\n", (int)size);
 		// imprime_array(array, size);
 		start = omp_get_wtime();
@@ -253,7 +314,7 @@ int main(int argc, char *argv[]) {
 		free(array);
 
 
-		array = le_array_inteiros( file_name, &size );
+		array = read_int_array( file_name, &size );
 		printf("\nQuickSort Paralelizado:\nOrdering %d elements\n", (int)size);
 		// imprime_array(array, size);
 		start = omp_get_wtime();
@@ -270,7 +331,7 @@ int main(int argc, char *argv[]) {
 
 	if( !QUICK_INSERTION ){
 		
-		array = le_array_inteiros( file_name, &size );
+		array = read_int_array( file_name, &size );
 		printf("\nInsertion Sort Sequencial:\nOrdering %d elements\n", (int)size);
 		// imprime_array(array, size);
 		start = omp_get_wtime();
@@ -281,7 +342,7 @@ int main(int argc, char *argv[]) {
 		check_array_is_ordered( array, size );
 		free(array);
 
-		array = le_array_inteiros( file_name, &size);
+		array = read_int_array( file_name, &size);
 		printf("\nInsertion Sort Paralelizado:\nOrdering %d elements\n", (int)size);
 		// imprime_array(array, size);
 		start = omp_get_wtime();
@@ -291,7 +352,7 @@ int main(int argc, char *argv[]) {
 		// imprime_array(array, size);
 		check_array_is_ordered( array, size );
 		free(array);		
-		
+
 	}
 
 	exit( EXIT_SUCCESS );
