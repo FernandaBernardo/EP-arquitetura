@@ -4,17 +4,6 @@
 #define false 0
 #define true 1
 
-/* Imprime em linha os elementos do array */
-void imprime_array(int* array, size_t size) {
-	int i;
-	for (i = 0; i < size; i++) {
-		// if( i!=0 && i%10 == 0 ){
-			// printf("\n");
-		// }
-		printf("%d ", array[i]);
-	}
-	printf("\n-----\n");
-}
 
 /* Imprime em linha os elementos do array */
 void imprime_array_from(int* array, int start, int end) {
@@ -28,11 +17,16 @@ void imprime_array_from(int* array, int start, int end) {
 	printf("\n-----\n");
 }
 
+/* Imprime em linha os elementos do array */
+void imprime_array(int* array, size_t size) {
+	imprime_array_from(array, 0, size - 1);
+}
+
 /* 
 Expande original, um array de int, do tamanho original para um novo tamanho, 
 que deve ser maior que o original 
 */
-int* expand_array( int* original, size_t original_size, size_t new_size ){
+static int* expand_array( int* original, size_t original_size, size_t new_size ){
 	if( original_size > new_size ){
 		fprintf( stderr, "ERROR: Argumento invalido. O novo tamanho do array deve ser maior que o antigo.\n");
 		exit( EXIT_FAILURE );
@@ -72,7 +66,11 @@ int* expand_array( int* original, size_t original_size, size_t new_size ){
 	return expanded_array;
 }
 
+/*
+Retorna um array de inteiros contendo todos os inteiros no arquivo.
+*/
 int* read_int_array( const char*  nome_arquivo, size_t* size ) {
+	
 	FILE *entrada = fopen( nome_arquivo, "rb" );
 	
 	if ( entrada == NULL ) {
@@ -80,10 +78,9 @@ int* read_int_array( const char*  nome_arquivo, size_t* size ) {
 		exit(EXIT_FAILURE);
 	};
 
-	rewind( entrada );
-
-	int index = 0;
+	unsigned int index = 0;
 	size_t array_size = 10;
+	
 	int *array = (int*)malloc(sizeof(int)*array_size);
 	
 	if( array == NULL){
@@ -104,14 +101,16 @@ int* read_int_array( const char*  nome_arquivo, size_t* size ) {
 
 		if( ferror( entrada )){
 			perror( "ERROR: An error ocurred while reading input file: ");
+			exit( EXIT_FAILURE );
 		}
 		
 		if( index == array_size ){
 			size_t original_size = array_size;
-			array_size = array_size * 2;
+			array_size *= array_size;
 		
 			int* expanded_array = expand_array( array, original_size, array_size);
 			free(array);
+
 			array = expanded_array;
 		}
 
@@ -145,6 +144,5 @@ void check_array_is_sorted(int* array, size_t size){
 	printf("Sanity test: sort checking has ended.\n");
 	printf("Elapsed time testing: %f sec.\n", omp_get_wtime() - start );
 }
-
 
 #endif
