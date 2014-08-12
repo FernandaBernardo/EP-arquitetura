@@ -112,19 +112,57 @@ void parallel_quicksort (int* array, int left, int right ) {
 		
 		// printf("parallel_quicksort thread %d\n", omp_get_thread_num());
 		int q = parallel_partition_quicksort(array, left, right);
-		#pragma omp sections
+		// #pragma omp sections
 		{	
-			#pragma omp section
+			// #pragma omp section
 			{
 				parallel_quicksort(array, left, q - 1 );
 			}
 
-			#pragma omp section
+			// #pragma omp section
 			{
 				parallel_quicksort(array, q + 1, right);
 			}
 		}
 	}
+}
+
+void parallel_iteractive_quicksort ( int* array, int start, int end ) {
+	int size = end - start + 1;
+
+	if ( size == 0 || size == 1) {
+		return;
+	}
+
+	int* stack = malloc(sizeof(int)*size*4);
+
+	stack[0] = 0;
+	stack[1] = size - 1;
+
+	int stack_index;
+
+	for ( stack_index = 1 ; stack_index >= 0; ) {
+		
+		int right, left;
+		
+		right = stack[ stack_index ]; 		//pop
+		left =  stack[ stack_index - 1 ]; 	//pop
+		
+		stack_index -= 2; 			//remove
+
+		if ( left < right ) {
+
+			int q = parallel_partition_quicksort( array, left, right );
+
+				stack[ stack_index + 1 ] = left;
+				stack[ stack_index + 2 ] = q - 1;
+				stack[ stack_index + 3 ] = q + 1;
+				stack[ stack_index + 4 ] = right;
+
+				stack_index += 4;
+		}
+	}
+
 }
 
 static double call_function( const char* msg, const char* file_name, void (*quicksort) ( int* array, int start, int end ), int check_sorted ){
@@ -158,9 +196,10 @@ int main(int argc, char *argv[]) {
 	} 
 	
 	double sequential_time, parallel_time;
-	sequential_time = call_function( "Sequential QuickSort", argv[1], sequencial_quicksort, 1 );
-	parallel_time = call_function( "Parallel QuickSort", argv[1], parallel_quicksort, 0 );
-	
+	sequential_time = call_function( "Sequential QuickSort", argv[1], sequencial_quicksort, 0 );
+	// parallel_time = call_function( "Parallel QuickSort", argv[1], parallel_quicksort, 0 );
+	parallel_time = call_function( "Iteractive Parallel QuickSort", argv[1], parallel_iteractive_quicksort, 0 );
+		
 	printf("\n\nRESULT:\nElapsed seq. time: %f sec.\nElapsed par. time: %f sec.\n", sequential_time, parallel_time);
 
 	exit( EXIT_SUCCESS );
