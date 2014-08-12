@@ -5,7 +5,9 @@
 #define true 1
 
 
-/* Imprime em linha os elementos do array */
+/*
+Imprime em linha os elementos do array 
+*/
 void imprime_array_from(int* array, int start, int end) {
 	int i;
 	for (i = start; i <= end; i++) {
@@ -17,7 +19,9 @@ void imprime_array_from(int* array, int start, int end) {
 	printf("\n-----\n");
 }
 
-/* Imprime em linha os elementos do array */
+/*
+Imprime em linha os elementos do array 
+*/
 void imprime_array(int* array, size_t size) {
 	imprime_array_from(array, 0, size - 1);
 }
@@ -134,14 +138,19 @@ void check_array_is_sorted(int* array, size_t size){
 	printf("Sanity test: checking if array is sorted...\n");
 	double start = omp_get_wtime();
 	
-	int i, j;
+	int i, j, unordered  = 0;
 	#pragma omp parallel for private(i,j)
 	for (i = size-1; i > -1; i--)
 		for(j=0; j < i ; j++ )
-			if( array[j] > array[i] )
-				printf("Wrong: %d antes de %d \n", array[j], array[i]);
+			if( array[j] > array[i] ) {
+				unordered++;
+				break;
+			}
 
 	printf("Sanity test: sort checking has ended.\n");
+	if( ! unordered ) printf("Sanity test: array IS ordered\n");
+	else printf("Sanity test: array is NOT ordered. There are %d elements wrongly positioned.\n", unordered);
+
 	printf("Elapsed time testing: %f sec.\n", omp_get_wtime() - start );
 }
 
