@@ -26,6 +26,18 @@ void imprime_array(int* array, size_t size) {
 	imprime_array_from(array, 0, size - 1);
 }
 
+void print_indexed_array_from( int* array, int start, int end){
+	int i;
+	for (i = start; i <= end; i++) {
+		printf("%d:[%d] ", i, array[i]);
+	}
+	printf("\n-----\n");
+}
+
+void print_indexed_array( int* array, size_t size ){
+	print_indexed_array_from( array, 0, size-1 );
+}
+
 /* 
 Expande original, um array de int, do tamanho original para um novo tamanho, 
 que deve ser maior que o original 

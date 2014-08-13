@@ -49,6 +49,9 @@ int partition_quicksort(int* array, int left, int right) {
 	return i + 1;
 }
 
+/*
+Retorna a posicao de insercao do pivo no array passado.
+*/
 int parallel_partition_quicksort( int* array, int pivot, int left, int right ) {
 	
 	int i, j;
@@ -62,7 +65,7 @@ int parallel_partition_quicksort( int* array, int pivot, int left, int right ) {
 		}
 	}
 
-	return i+1;
+	return i + 1;
 }
 
 void sequential_quicksort (int* array, int left, int right) {
@@ -81,67 +84,104 @@ struct thread_data
 	int end;
 };
 
+static unsigned int total_threads = 1;	
+
 void parallel_quicksort (int* array, int left, int right ) {
-	static unsigned int total_threads = 1;	
-	if (left < right) {
+	if ( left >= right) {
+		#pragma omp atomic
+		total_threads--;
+	} else {
+		int pivot_position = median_of_three_pivot( array, left, right );
+		int pivot = array[ pivot_position ]; 
+		swap( array + pivot_position, array + right );
 
-		// printf("total_threads = %d\n", total_threads);
-		if( total_threads == omp_get_num_threads() || right - left + 1 < 1000) 
+		if( total_threads >= omp_get_num_procs() || right - left + 1 <= 1000 ) 
 		{	
-			int q = partition_quicksort(array, left, right);
-			sequential_quicksort( array, left, q - 1 );
-			sequential_quicksort( array, q + 1, right );
+			int q = partition_quicksort( array, left, right );
+
+			parallel_quicksort( array, left, q-1 );
+			parallel_quicksort( array, q+1, right );
+
 		} else {
+			// printf("Before local rearrangement.\n");
+			// print_indexed_array( array, 50 );
 
-			int pivot_position = median_of_three_pivot(array, left, right);
-			int pivot = array[ pivot_position ];
-			swap( array+pivot_position, array+right );
+			struct thread_data *thread;
 
-			struct thread_data *thread = malloc(sizeof(struct thread_data) * omp_get_num_threads());
-
-			int num_threads, t_size, t, t_i;	
-
+			int num_threads, t_size;	
 			#pragma omp parallel shared( num_threads, pivot, thread, t_size )
 			{
 				int id = omp_get_thread_num();
 				num_threads = omp_get_num_threads();
 				
-				t_size 	= right - left + 1  / num_threads;
+				#pragma omp single
+				thread = malloc(sizeof(struct thread_data) * num_threads );
+
+				t_size 	= ( right - left + 1 ) / num_threads;
 				
 				thread[ id ].start  = id * t_size + left;
 				thread[ id ].end 	= thread[ id ].start + t_size - 1;
 				
-				if(  id == omp_get_num_threads() - 1 && (right - left + 1)%2 == 0 ) {
-					thread[ id ].end -= 1; // subtrai 1 se for a thread que contém o pivot e não tiver subtraído 1 antes
+				if(  thread[ id].end == right ) {
+					thread[ id ].end += ( right - left + 1 ) - ( num_threads * t_size ) - 1;
+					// subtrai 1 se for a thread que contém o pivot e não tiver subtraído 1 antes
 				} 
 
 				thread[ id ].q = parallel_partition_quicksort( array, pivot, thread[id].start, thread[id].end ); 
 			}
 
-			for( t = 1; t < omp_get_num_threads(); t++ ) { //Se é single-thread, ok
-				size_t block_size = thread[ t ].q - thread[ t ].start;
-				int* swap_block = malloc(sizeof(int*)*block_size);
-				
-				if( swap_block == NULL ){
-					perror("ERROR while malloc'ing: ");
-					exit( EXIT_FAILURE );
+			// printf("Before global rearrengement.\n");
+			// print_indexed_array( array, 50 );
+			// printf("left = %d right = %d t_size = %d num_threads = %d\n", left, right, t_size, num_threads);
+			// int a;
+			// for( a = 0; a<num_threads; a++){
+				// printf("thread[%d].start=%d ", a, thread[a].start);
+				// printf("thread[%d].q=%d ", a, thread[a].q);
+				// printf("thread[%d].end=%d\n", a, thread[a].end);
+			// }
+			int t, offset;
+			for( t = 1; t < num_threads; t++ ) { //Se é single-thread, ok
+				// printf("\tthread %d", t);
+				for( offset = 0 ; offset < ( thread[ t ].q - thread[ t ].start ) ; offset++ ) {
+					swap( array + thread[ 0 ].q, array + thread[ t ].start + offset );
+					thread[ 0 ].q++;
+					// printf("thread[ 0 ].q=%d\n", thread[ 0 ].q);
 				}
-				memcpy( swap_block, array + thread[ 0 ].q, block_size );
-				memcpy( array + thread[ 0 ].q, array + thread[ t ].start, block_size );
-				memcpy( array + thread[ t ].start, swap_block, block_size );
-				thread[ 0 ].q += block_size;
-
-				swap( array+thread[ 0 ].q, array+right );
-				total_threads++;
 			}
 
-			parallel_quicksort(array, left, thread[ 0 ].q - 1 );
-			parallel_quicksort(array, thread[ 0 ].q + 1, right);
+			swap( array+thread[ 0 ].q, array+right );
 
+			// printf("After global rearrengement.\n");
+			// printf( "pivot = %d pos = %d\n", pivot, thread[ 0 ].q );
+			// print_indexed_array( array, 50 );
+
+			int left_size = thread[0].q - left;
+			int right_size= right - thread[0].q + 1;
+			#pragma omp parallel shared( left_size, right_size )
+			{
+				#pragma omp single
+				{
+					if( right_size  < 1000 ){
+						sequential_quicksort(array, thread[ 0 ].q + 1, right);
+					} else {
+						parallel_quicksort(array, thread[ 0 ].q + 1, right);
+						total_threads++;
+					}
+				}
+				#pragma omp single
+				{
+					if( left_size < 1000 ) {
+						sequential_quicksort( array, left, thread[ 0 ].q - 1 );
+					} else {
+						parallel_quicksort(array, left, thread[ 0 ].q - 1 );
+						if( right_size  < 1000 ){
+							total_threads++;
+						}
+					}
+				}
+			}
 		}		
-	} else {
-		total_threads--;
-	}
+	} 
 }
 
 void parallel_iteractive_quicksort ( int* array, int start, int end ) {
@@ -195,7 +235,7 @@ static double call_function( const char* msg, const char* file_name, void (*quic
 	array = read_int_array( file_name, &size );
 
 	printf("\n\n\n%s:\nOrdering %d elements\n", msg, (int)size);
-	// imprime_array_from( array, 0, size - 1);
+	// print_indexed_array_from( array, 0, size - 1);
 
 	start = omp_get_wtime();
 	(*quicksort)(array, 0, size - 1);
@@ -207,7 +247,7 @@ static double call_function( const char* msg, const char* file_name, void (*quic
 		fast_check_array_is_sorted( file_name, array, size );
 		// check_array_is_sorted( file_name, array, size );
 	}
-	// imprime_array_from( array, 0, size - 1);
+	// print_indexed_array_from( array, 0, size - 1);
 	free( array );
 	
 	return elapsed_time;
@@ -219,13 +259,23 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	} 
 	
+	// FILE *stream ;
+   	// if((stream = freopen("/home/renan/Área de Trabalho/log.txt", "w", stdout)) == NULL) {
+    	// perror("ERROR: ");
+    	// exit(EXIT_FAILURE);
+   	// }
+
+
+	
 	double sequential_time, parallel_time = 0.0;
 	sequential_time = call_function( "Sequential QuickSort", argv[1], sequential_quicksort, 0 );
-	// omp_set_nested(1);
+	omp_set_nested(1);
 	parallel_time = call_function( "Parallel QuickSort", argv[1], parallel_quicksort, 1 );
+
 	// parallel_time = call_function( "Iteractive Parallel QuickSort", argv[1], parallel_iteractive_quicksort, 1 );
 		
 	printf("\n\nRESULT:\nElapsed seq. time: %f sec.\nElapsed par. time: %f sec.\n", sequential_time, parallel_time);
-
+  	
+  	// stream = freopen("CON", "w", stdout);
 	exit( EXIT_SUCCESS );
 }
