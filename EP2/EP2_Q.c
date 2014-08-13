@@ -87,24 +87,17 @@ struct thread_data
 static unsigned int total_threads = 1;	
 
 void parallel_quicksort (int* array, int left, int right ) {
-	if ( left >= right) {
-		#pragma omp atomic
-		total_threads--;
-	} else {
-		int pivot_position = median_of_three_pivot( array, left, right );
-		int pivot = array[ pivot_position ]; 
-		swap( array + pivot_position, array + right );
-
-		if( total_threads >= omp_get_num_procs() || right - left + 1 <= 1000 ) 
+	if ( left < right) {
+		
+		if( total_threads >= omp_get_num_procs() ) 
 		{	
-			int q = partition_quicksort( array, left, right );
-
-			parallel_quicksort( array, left, q-1 );
-			parallel_quicksort( array, q+1, right );
-
+			sequential_quicksort( array, left, right );
 		} else {
 			// printf("Before local rearrangement.\n");
 			// print_indexed_array( array, 50 );
+			int pivot_position = median_of_three_pivot( array, left, right );
+			int pivot = array[ pivot_position ]; 
+			swap( array + pivot_position, array + right );
 
 			struct thread_data *thread;
 
@@ -157,6 +150,7 @@ void parallel_quicksort (int* array, int left, int right ) {
 
 			int left_size = thread[0].q - left;
 			int right_size= right - thread[0].q + 1;
+
 			#pragma omp parallel shared( left_size, right_size )
 			{
 				#pragma omp single
