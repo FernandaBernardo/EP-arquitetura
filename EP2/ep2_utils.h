@@ -148,10 +148,91 @@ void check_array_is_sorted(int* array, size_t size){
 			}
 
 	printf("Sanity test: sort checking has ended.\n");
-	if( ! unordered ) printf("Sanity test: array IS ordered\n");
-	else printf("Sanity test: array is NOT ordered. There are %d elements wrongly positioned.\n", unordered);
-
+	if( ! unordered ) printf("Sanity test: array IS sorted\n");
+	else printf("Sanity test: array is NOT sorted. There are %d elements wrongly positioned.\n", unordered);
 	printf("Elapsed time testing: %f sec.\n", omp_get_wtime() - start );
+
 }
+
+int a_median_of_three_pivot(int* array, unsigned int start, unsigned int end){
+
+	unsigned int middle = end+start/2;
+
+	int x = array[start];
+	int y = array[middle];
+	int z = array[end];
+
+	if( x < y ) {
+		
+		if( y < z) return middle;
+		return end;
+
+	} else if ( x < z) return start;
+
+	return end;
+}
+
+void a_swap( int* a, int* b) {
+	int temp = *a;
+	*a = *b;
+	*b = temp;
+}
+
+int a_partition_quicksort(int* array, int left, int right) {
+	
+	int pivot_position = a_median_of_three_pivot( array, left, right );
+	int pivot = array[ pivot_position ]; 
+	a_swap( array + pivot_position, array + right );
+
+	int i, j;
+	i = left - 1;
+
+	for (j = left; j <= right - 1; ++j) {
+		if (array[j] <= pivot) {
+			i++;
+			a_swap( array + i, array + j );
+		}
+	}
+
+	a_swap( array + i + 1, array + right );
+	return i + 1;
+}
+
+void a_sequential_quicksort (int* array, int left, int right) {
+	if (left < right) {
+		int q = a_partition_quicksort(array, left, right);
+		a_sequential_quicksort(array, left, q - 1);
+		a_sequential_quicksort(array, q + 1, right);
+	}
+}
+
+void fast_check_array_is_sorted(const char *file_name, int* array, size_t size){
+	printf("Sanity test: checking if array is sorted...\n");
+	double start = omp_get_wtime();
+	
+	size_t original_size = 0;
+	int* original_array = read_int_array( file_name, &original_size );
+
+	if( original_size != size ){
+		printf("Sanity test: array size is different from the original!\n");
+	}
+
+	a_sequential_quicksort( original_array, 0, original_size - 1 );
+
+	int i, unordered = 0;
+	#pragma omp parallel for private(i)
+	for (i = 0; i < size; i++) {
+		if( original_array[i] != array[i] ){
+			unordered++;
+		}
+	}
+
+	printf("Sanity test: sort checking has ended.\n");
+	if( ! unordered ) printf("Sanity test: array IS sorted\n");
+	else printf("Sanity test: array is NOT sorted. There are %d elements wrongly positioned.\n", unordered);
+	printf("Elapsed time testing: %f sec.\n", omp_get_wtime() - start );
+
+}
+
 
 #endif
