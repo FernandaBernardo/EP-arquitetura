@@ -5,37 +5,33 @@
 #include <time.h>
 #include "ep2_utils.h"
 
-void insertion_sequencial (int A[], int start, int end) {
-	int i, j, v;
+void insertion_sequencial(int start, int array[], int size) {
+    if (start < size) {
+        int j;
+        int aux = array[start];
+ 		
+        for (j = start; j > 0 && array[j-1] > aux; j--)
+            array[j] = array[j-1];
+        array[j] = aux;
 
-	for (i = start + 1; i <= end; i++) {
-		v = A[i];
-		j = i;
-		while ((j > start) && (A[j - 1] > v)) {
-			A[j] = A[j - 1];
-			j = j - 1;
-		}
-		A[j] = v;
-	}
+        insertion_sequencial(++start, array, size);
+    }
 }
 
-void insertion_paralelo (int A[], int tam) {
-	int i, j, v;
+void insertion_paralelo(int start, int array[], int size) {
+    if (start < size) {
+        int j;
+        int aux = array[start];
+ 		
+ 		#pragma omp parallel private(j, aux)
+ 		{
+        for (j = start; j > 0 && array[j-1] > aux; j--)
+            array[j] = array[j-1];
+        array[j] = aux;
+    	}
 
-	#pragma omp for private (i, j, v)
-	for (i = 1; i < tam; i++) {
-		v = A[i];
-		j = i;
-
-		while ((j > 0) && (A[j - 1] > v)) {
-			#pragma omp critical
-			{
-				A[j] = A[j - 1];
-				j = j - 1;
-			}
-		}
-		A[j] = v;
-	}
+        insertion_paralelo(++start, array, size);
+    }
 }
 
 int main(int argc, char const *argv[])
@@ -54,7 +50,7 @@ int main(int argc, char const *argv[])
 	printf("\nInsertion Sort Sequencial:\nOrdering %d elements\n", (int)size);
 	// imprime_array(array, size);
 	start = omp_get_wtime();
-	insertion_sequencial(array, 0, size - 1 );
+	insertion_sequencial(0, array, size - 1);
 	end = omp_get_wtime();
 	printf("Elapsed time: %f sec.\n\n", (end-start));
 	// imprime_array(array, size);
@@ -65,11 +61,12 @@ int main(int argc, char const *argv[])
 	printf("\nInsertion Sort Paralelizado:\nOrdering %d elements\n", (int)size);
 	// imprime_array(array, size);
 	start = omp_get_wtime();
-	insertion_paralelo(array, size);
+	// insertion_paralelo(array, size);
+	insertion_paralelo(0, array, size);
 	end = omp_get_wtime();
 	printf("Elapsed time: %f sec.\n\n", (end-start));
 	// imprime_array(array, size);
-	// check_array_is_sorted( array, size );
+	check_array_is_sorted( array, size );
 	free(array);		
 
 	exit( EXIT_SUCCESS );
