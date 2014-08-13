@@ -82,9 +82,9 @@ struct thread_data
 };
 
 void parallel_quicksort (int* array, int left, int right ) {
+	static unsigned int total_threads = 1;	
 	if (left < right) {
 
-		static unsigned int total_threads = 1;	
 		// printf("total_threads = %d\n", total_threads);
 		if( total_threads == omp_get_num_threads() || right - left + 1 < 1000) 
 		{	
@@ -97,7 +97,7 @@ void parallel_quicksort (int* array, int left, int right ) {
 			int pivot = array[ pivot_position ];
 			swap( array+pivot_position, array+right );
 
-			struct thread_data *thread;
+			struct thread_data *thread = malloc(sizeof(struct thread_data) * omp_get_num_threads());
 
 			int num_threads, t_size, t, t_i;	
 
@@ -108,11 +108,6 @@ void parallel_quicksort (int* array, int left, int right ) {
 				
 				t_size 	= right - left + 1  / num_threads;
 				
-				#pragma omp single
-				{
-					thread  = malloc(sizeof(struct thread_data) * num_threads);
-				}
-
 				thread[ id ].start  = id * t_size + left;
 				thread[ id ].end 	= thread[ id ].start + t_size - 1;
 				
@@ -123,7 +118,6 @@ void parallel_quicksort (int* array, int left, int right ) {
 				thread[ id ].q = parallel_partition_quicksort( array, pivot, thread[id].start, thread[id].end ); 
 			}
 
-			#pragma omp parallel for private(t)
 			for( t = 1; t < omp_get_num_threads(); t++ ) { //Se é single-thread, ok
 				size_t block_size = thread[ t ].q - thread[ t ].start;
 				int* swap_block = malloc(sizeof(int*)*block_size);
@@ -135,21 +129,18 @@ void parallel_quicksort (int* array, int left, int right ) {
 				memcpy( swap_block, array + thread[ 0 ].q, block_size );
 				memcpy( array + thread[ 0 ].q, array + thread[ t ].start, block_size );
 				memcpy( array + thread[ t ].start, swap_block, block_size );
-				// for( t_i = thread[ t ].start; t_i <  thread[ t ].q ; t_i++ ) {
-				// 	swap( array + thread[ 0 ].q,  array + t_i );
-				// 	thread[ 0 ].q += 1;
-				// }
 				thread[ 0 ].q += block_size;
 
 				swap( array+thread[ 0 ].q, array+right );
 				total_threads++;
 			}
 
-
 			parallel_quicksort(array, left, thread[ 0 ].q - 1 );
 			parallel_quicksort(array, thread[ 0 ].q + 1, right);
 
-		} 	
+		}		
+	} else {
+		total_threads--;
 	}
 }
 
