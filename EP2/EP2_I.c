@@ -50,11 +50,11 @@ int main(int argc, char const *argv[])
 	printf("\nInsertion Sort Sequencial:\nOrdering %d elements\n", (int)size);
 	// imprime_array(array, size);
 	start = omp_get_wtime();
-	insertion_sequencial(0, array, size - 1);
+	insertion_sequencial(0, array, size);
 	end = omp_get_wtime();
 	printf("Elapsed time: %f sec.\n\n", (end-start));
 	// imprime_array(array, size);
-	// check_array_is_sorted( array, size );
+	check_array_is_sorted( array, size );
 	free(array);		
 
 	array = read_int_array( file_name, &size );
