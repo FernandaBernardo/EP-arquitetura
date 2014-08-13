@@ -228,8 +228,8 @@ void fast_check_array_is_sorted(const char *file_name, int* array, size_t size){
 	}
 
 	printf("Sanity test: sort checking has ended.\n");
-	if( ! unordered ) printf("Sanity test: array IS sorted\n");
-	else printf("Sanity test: array is NOT sorted. There are %d elements wrongly positioned.\n", unordered);
+	if( ! unordered ) printf("Sanity test: SUCCESS - array IS sorted\n");
+	else printf("Sanity test: FAIL - array is NOT sorted. There are %d elements wrongly positioned.\n", unordered);
 	printf("Elapsed time testing: %f sec.\n", omp_get_wtime() - start );
 
 }
