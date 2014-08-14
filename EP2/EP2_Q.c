@@ -102,7 +102,7 @@ void parallel_quicksort (int* array, int left, int right ) {
 			struct thread_data *thread;
 
 			int num_threads, t_size;	
-			#pragma omp parallel shared( num_threads, pivot, thread, t_size )
+			#pragma omp parallel shared( num_threads, pivot, thread, t_size ) num_threads(2)
 			{
 				int id = omp_get_thread_num();
 				num_threads = omp_get_num_threads();
