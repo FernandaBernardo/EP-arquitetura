@@ -70,29 +70,20 @@ int main(int argc, char const *argv[]) {
 	double start, end, sequential_time, parallel_time;
 
 	array = read_int_array( file_name, &size );
-	printf("\nInsertion Sort Paralelizado:\nOrdering %d elements\n", (int)size);
-	// imprime_array(array, size);
-	start = omp_get_wtime();
-	// insertion_paralelo(array, size);
-	divide_array(array, size);
-	end = omp_get_wtime();
-	printf("Elapsed time: %f sec.\n\n", (end-start));
-	// imprime_array(array, size);
-	fast_check_array_is_sorted(file_name, array, size );
-	// imprime_array(array, size);
-	free(array);	
-
-	array = read_int_array( file_name, &size );
 	printf("\nInsertion Sort Sequencial:\nOrdering %d elements\n", (int)size);
-	// imprime_array(array, size);
 	start = omp_get_wtime();
 	insertion_sequencial(array, size);
 	end = omp_get_wtime();
 	printf("Elapsed time: %f sec.\n\n", (end-start));
-	// imprime_array(array, size);
-	fast_check_array_is_sorted(file_name, array, size );
-	// imprime_array(array, size);
 	free(array);		
+
+	array = read_int_array( file_name, &size );
+	printf("\nInsertion Sort Paralelizado:\nOrdering %d elements\n", (int)size);
+	start = omp_get_wtime();
+	divide_array(array, size);
+	end = omp_get_wtime();
+	printf("Elapsed time: %f sec.\n\n", (end-start));
+	free(array);	
 
 	exit( EXIT_SUCCESS );
 }
