@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
 	double sequential_time, parallel_time = 0.0;
 	sequential_time = call_function( "Sequential QuickSort", argv[1], sequential_quicksort, 0 );
 	omp_set_nested(1);
-	parallel_time = call_function( "Parallel QuickSort", argv[1], parallel_quicksort, 1 );
+	parallel_time = call_function( "Parallel QuickSort", argv[1], parallel_quicksort, 0 );
 
 	printf("\n\nRESULT:\nElapsed seq. time: %f sec.\nElapsed par. time: %f sec.\n", sequential_time, parallel_time);
   	
