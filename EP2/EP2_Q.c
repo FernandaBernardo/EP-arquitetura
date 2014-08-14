@@ -1,3 +1,8 @@
+/*
+* O grupo: Fernanda Moraes Bernardo 797991 e Renan Souza de Freitas 7629870
+* Esse arquivo contém a implementação do algoritmo QUICKSORT tanto sequencial quanto paralelizado.
+* O arquivo foi criadado para a disciplina de Arquitetura de Computadores.	
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
