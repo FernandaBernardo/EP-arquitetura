@@ -23,7 +23,7 @@ void insertion_sequencial(int* A, int size) {
 void insertion_paralelo(int* A, int start, int end) {
    int i, j, v;
 
-	for (i = start; i < end; i++) {
+	for (i = start; i <= end; i++) {
 		v = A[i];
 		j = i;
 
@@ -36,24 +36,27 @@ void insertion_paralelo(int* A, int start, int end) {
 }
 
 void divide_array (int* array, int size) {
-	#pragma omp parallel num_threads(4)
+	int start, end, total_threads, array_size;
+	
+	#pragma omp parallel shared( total_threads, array_size ) private( start, end ) 
 	{
-		int total_threads = omp_get_num_threads();
-		int thread_atual = omp_get_thread_num();
-		int tam_array = size/total_threads;
-		int ini = thread_atual*tam_array;
-		int fim = ini+tam_array-1;
-		printf("%d - %d\n", ini, fim);
+		int id = omp_get_thread_num();
+		total_threads = omp_get_num_threads();
+		
+		array_size = size/total_threads;
+		
+		start = id*array_size;
+		end = start+array_size-1;
 
-		if(thread_atual == total_threads-1) {
-			printf("ULTIMA %d - %d\n", ini, size);
-			insertion_paralelo(array, ini, size);
+		if(id == total_threads-1) {
+			insertion_paralelo(array, start, size - 1);
 		}
 		else {
-			printf("MEIO %d - %d\n", ini, fim);
-			insertion_paralelo(array, ini, fim);
+			insertion_paralelo(array, start, end);
 		}
 	}
+	
+	insertion_paralelo(array, 0, size - 1);
 }
 
 int main(int argc, char const *argv[]) {
@@ -74,7 +77,7 @@ int main(int argc, char const *argv[]) {
 	divide_array(array, size);
 	end = omp_get_wtime();
 	printf("Elapsed time: %f sec.\n\n", (end-start));
-	imprime_array(array, size);
+	// imprime_array(array, size);
 	fast_check_array_is_sorted(file_name, array, size );
 	// imprime_array(array, size);
 	free(array);	
