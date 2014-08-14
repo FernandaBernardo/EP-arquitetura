@@ -93,8 +93,6 @@ void parallel_quicksort (int* array, int left, int right ) {
 		{	
 			sequential_quicksort( array, left, right );
 		} else {
-			// printf("Before local rearrangement.\n");
-			// print_indexed_array( array, 50 );
 			int pivot_position = median_of_three_pivot( array, left, right );
 			int pivot = array[ pivot_position ]; 
 			swap( array + pivot_position, array + right );
@@ -123,30 +121,16 @@ void parallel_quicksort (int* array, int left, int right ) {
 				thread[ id ].q = parallel_partition_quicksort( array, pivot, thread[id].start, thread[id].end ); 
 			}
 
-			// printf("Before global rearrengement.\n");
-			// print_indexed_array( array, 50 );
-			// printf("left = %d right = %d t_size = %d num_threads = %d\n", left, right, t_size, num_threads);
-			// int a;
-			// for( a = 0; a<num_threads; a++){
-				// printf("thread[%d].start=%d ", a, thread[a].start);
-				// printf("thread[%d].q=%d ", a, thread[a].q);
-				// printf("thread[%d].end=%d\n", a, thread[a].end);
-			// }
 			int t, offset;
 			for( t = 1; t < num_threads; t++ ) { //Se é single-thread, ok
-				// printf("\tthread %d", t);
 				for( offset = 0 ; offset < ( thread[ t ].q - thread[ t ].start ) ; offset++ ) {
 					swap( array + thread[ 0 ].q, array + thread[ t ].start + offset );
 					thread[ 0 ].q++;
-					// printf("thread[ 0 ].q=%d\n", thread[ 0 ].q);
 				}
 			}
 
 			swap( array+thread[ 0 ].q, array+right );
 
-			// printf("After global rearrengement.\n");
-			// printf( "pivot = %d pos = %d\n", pivot, thread[ 0 ].q );
-			// print_indexed_array( array, 50 );
 
 			int left_size = thread[0].q - left;
 			int right_size= right - thread[0].q + 1;
@@ -164,11 +148,11 @@ void parallel_quicksort (int* array, int left, int right ) {
 				}
 				#pragma omp single
 				{
-					if( left_size < 1000 ) {
+					if( left_size < 1000 ) {//Se nao atinge um minimo, usa sequencial para poupar criacao de threads
 						sequential_quicksort( array, left, thread[ 0 ].q - 1 );
 					} else {
 						parallel_quicksort(array, left, thread[ 0 ].q - 1 );
-						if( right_size  < 1000 ){
+						if( right_size  < 1000 ){//Se nao atinge um minimo, usa sequencial para poupar criacao de threads
 							total_threads++;
 						}
 					}
@@ -178,7 +162,10 @@ void parallel_quicksort (int* array, int left, int right ) {
 	} 
 }
 
-void parallel_iteractive_quicksort ( int* array, int start, int end ) {
+/*
+Versão iterativa do quicksort. Criada para fins de teste e estudo.
+*/
+void iteractive_quicksort ( int* array, int start, int end ) {
 	int size = end - start + 1;
 
 	if ( size == 0 || size == 1) {
@@ -221,6 +208,9 @@ void parallel_iteractive_quicksort ( int* array, int start, int end ) {
 
 }
 
+/*
+Método auxiliar que invoca a versão de quicksort passada como parametro.
+*/
 static double call_function( const char* msg, const char* file_name, void (*quicksort) ( int* array, int start, int end ), int check_sorted ){
 	
 	size_t size;
@@ -229,7 +219,6 @@ static double call_function( const char* msg, const char* file_name, void (*quic
 	array = read_int_array( file_name, &size );
 
 	printf("\n\n\n%s:\nOrdering %d elements\n", msg, (int)size);
-	// print_indexed_array_from( array, 0, size - 1);
 
 	start = omp_get_wtime();
 	(*quicksort)(array, 0, size - 1);
@@ -239,9 +228,7 @@ static double call_function( const char* msg, const char* file_name, void (*quic
 
 	if( check_sorted ) {
 		fast_check_array_is_sorted( file_name, array, size );
-		// check_array_is_sorted( file_name, array, size );
 	}
-	// print_indexed_array_from( array, 0, size - 1);
 	free( array );
 	
 	return elapsed_time;
@@ -253,23 +240,12 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	} 
 	
-	// FILE *stream ;
-   	// if((stream = freopen("/home/renan/Área de Trabalho/log.txt", "w", stdout)) == NULL) {
-    	// perror("ERROR: ");
-    	// exit(EXIT_FAILURE);
-   	// }
-
-
-	
 	double sequential_time, parallel_time = 0.0;
 	sequential_time = call_function( "Sequential QuickSort", argv[1], sequential_quicksort, 0 );
 	omp_set_nested(1);
 	parallel_time = call_function( "Parallel QuickSort", argv[1], parallel_quicksort, 1 );
 
-	// parallel_time = call_function( "Iteractive Parallel QuickSort", argv[1], parallel_iteractive_quicksort, 1 );
-		
 	printf("\n\nRESULT:\nElapsed seq. time: %f sec.\nElapsed par. time: %f sec.\n", sequential_time, parallel_time);
   	
-  	// stream = freopen("CON", "w", stdout);
 	exit( EXIT_SUCCESS );
 }
