@@ -78,17 +78,27 @@ void sequential_quicksort (int* array, int left, int right) {
 
 
 static unsigned int total_threads = 1;	
+static size_t MIN_SIZE = 2000;
 
 void parallel_quicksort (int* array, int left, int right ) {
 	total_threads++;
 	if ( left < right) {
 		
-		if( total_threads >= omp_get_num_procs() ) 
+		if( total_threads >= omp_get_num_procs() || right - left + 1 < MIN_SIZE) 
 		{	
 			sequential_quicksort( array, left, right );
 		} else {
 			int q = partition_quicksort( array, left, right );
 
+			if ( q - left < MIN_SIZE ) 
+			{
+				sequential_quicksort( array, left, q-1);
+				parallel_quicksort( array, q+1, right );
+			} else if( right - q + 2 < MIN_SIZE )
+			{
+				parallel_quicksort( array, left, q-1);
+				sequential_quicksort( array, q+1, right );
+			}
 			#pragma omp sections
 			{
 				#pragma omp section
@@ -181,13 +191,6 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	} 
 	
-	// FILE *stream ;
-   	// if((stream = freopen("/home/renan/Área de Trabalho/log.txt", "w", stdout)) == NULL) {
-    	// perror("ERROR: ");
-    	// exit(EXIT_FAILURE);
-   	// }
-
-
 	
 	double sequential_time, parallel_time = 0.0;
 	sequential_time = call_function( "Sequential QuickSort", argv[1], sequential_quicksort, 0 );
