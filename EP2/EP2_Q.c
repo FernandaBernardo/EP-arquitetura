@@ -1,8 +1,3 @@
-/*
-* O grupo: Fernanda Moraes Bernardo 797991 e Renan Souza de Freitas 7629870
-* Esse arquivo contém a implementação do algoritmo QUICKSORT tanto sequencial quanto paralelizado.
-* O arquivo foi criadado para a disciplina de Arquitetura de Computadores.	
-*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -82,95 +77,36 @@ void sequential_quicksort (int* array, int left, int right) {
 }
 
 
-struct thread_data
-{
-	int start;
-	int q;
-	int end;
-};
-
 static unsigned int total_threads = 1;	
 
 void parallel_quicksort (int* array, int left, int right ) {
+	total_threads++;
 	if ( left < right) {
 		
 		if( total_threads >= omp_get_num_procs() ) 
 		{	
 			sequential_quicksort( array, left, right );
 		} else {
-			int pivot_position = median_of_three_pivot( array, left, right );
-			int pivot = array[ pivot_position ]; 
-			swap( array + pivot_position, array + right );
+			int q = partition_quicksort( array, left, right );
 
-			struct thread_data *thread;
-
-			int num_threads, t_size;	
-			#pragma omp parallel shared( num_threads, pivot, thread, t_size ) num_threads(2)
+			#pragma omp sections
 			{
-				int id = omp_get_thread_num();
-				num_threads = omp_get_num_threads();
-				
-				#pragma omp single
-				thread = malloc(sizeof(struct thread_data) * num_threads );
-
-				t_size 	= ( right - left + 1 ) / num_threads;
-				
-				thread[ id ].start  = id * t_size + left;
-				thread[ id ].end 	= thread[ id ].start + t_size - 1;
-				
-				if(  thread[ id].end == right ) {
-					thread[ id ].end += ( right - left + 1 ) - ( num_threads * t_size ) - 1;
-					// subtrai 1 se for a thread que contém o pivot e não tiver subtraído 1 antes
-				} 
-
-				thread[ id ].q = parallel_partition_quicksort( array, pivot, thread[id].start, thread[id].end ); 
-			}
-
-			int t, offset;
-			for( t = 1; t < num_threads; t++ ) { //Se é single-thread, ok
-				for( offset = 0 ; offset < ( thread[ t ].q - thread[ t ].start ) ; offset++ ) {
-					swap( array + thread[ 0 ].q, array + thread[ t ].start + offset );
-					thread[ 0 ].q++;
-				}
-			}
-
-			swap( array+thread[ 0 ].q, array+right );
-
-
-			int left_size = thread[0].q - left;
-			int right_size= right - thread[0].q + 1;
-
-			#pragma omp parallel shared( left_size, right_size )
-			{
-				#pragma omp single
+				#pragma omp section
 				{
-					if( right_size  < 1000 ){
-						sequential_quicksort(array, thread[ 0 ].q + 1, right);
-					} else {
-						parallel_quicksort(array, thread[ 0 ].q + 1, right);
-						total_threads++;
-					}
+					parallel_quicksort( array, left, q-1 );
 				}
-				#pragma omp single
+
+				#pragma omp section
 				{
-					if( left_size < 1000 ) {//Se nao atinge um minimo, usa sequencial para poupar criacao de threads
-						sequential_quicksort( array, left, thread[ 0 ].q - 1 );
-					} else {
-						parallel_quicksort(array, left, thread[ 0 ].q - 1 );
-						if( right_size  < 1000 ){//Se nao atinge um minimo, usa sequencial para poupar criacao de threads
-							total_threads++;
-						}
-					}
+					parallel_quicksort( array, q+1, right ); 
 				}
-			}
+			} 
 		}		
 	} 
+	total_threads--;
 }
 
-/*
-Versão iterativa do quicksort. Criada para fins de teste e estudo.
-*/
-void iteractive_quicksort ( int* array, int start, int end ) {
+void parallel_iteractive_quicksort ( int* array, int start, int end ) {
 	int size = end - start + 1;
 
 	if ( size == 0 || size == 1) {
@@ -213,9 +149,6 @@ void iteractive_quicksort ( int* array, int start, int end ) {
 
 }
 
-/*
-Método auxiliar que invoca a versão de quicksort passada como parametro.
-*/
 static double call_function( const char* msg, const char* file_name, void (*quicksort) ( int* array, int start, int end ), int check_sorted ){
 	
 	size_t size;
@@ -224,6 +157,7 @@ static double call_function( const char* msg, const char* file_name, void (*quic
 	array = read_int_array( file_name, &size );
 
 	printf("\n\n\n%s:\nOrdering %d elements\n", msg, (int)size);
+	// print_indexed_array_from( array, 0, size - 1);
 
 	start = omp_get_wtime();
 	(*quicksort)(array, 0, size - 1);
@@ -233,7 +167,9 @@ static double call_function( const char* msg, const char* file_name, void (*quic
 
 	if( check_sorted ) {
 		fast_check_array_is_sorted( file_name, array, size );
+		// check_array_is_sorted( file_name, array, size );
 	}
+	// print_indexed_array_from( array, 0, size - 1);
 	free( array );
 	
 	return elapsed_time;
@@ -245,12 +181,23 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	} 
 	
+	// FILE *stream ;
+   	// if((stream = freopen("/home/renan/Área de Trabalho/log.txt", "w", stdout)) == NULL) {
+    	// perror("ERROR: ");
+    	// exit(EXIT_FAILURE);
+   	// }
+
+
+	
 	double sequential_time, parallel_time = 0.0;
 	sequential_time = call_function( "Sequential QuickSort", argv[1], sequential_quicksort, 0 );
 	omp_set_nested(1);
-	parallel_time = call_function( "Parallel QuickSort", argv[1], parallel_quicksort, 0 );
+	parallel_time = call_function( "Parallel QuickSort", argv[1], parallel_quicksort, 1 );
 
+	// parallel_time = call_function( "Iteractive Parallel QuickSort", argv[1], parallel_iteractive_quicksort, 1 );
+		
 	printf("\n\nRESULT:\nElapsed seq. time: %f sec.\nElapsed par. time: %f sec.\n", sequential_time, parallel_time);
   	
+  	// stream = freopen("CON", "w", stdout);
 	exit( EXIT_SUCCESS );
 }
