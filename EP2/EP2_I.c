@@ -5,58 +5,47 @@
 #include <time.h>
 #include "ep2_utils.h"
 
-void insertion_sequencial(int* A, int size) {
+void insertion_sequencial( int* array, int left, int right ) {
     int i, j, v;
+    int size = right - left + 1;
 
-	for (i = 0; i < size; i++) {
-		v = A[i];
-		j = i;
-
-		while ((j > 0) && (A[j - 1] > v)) {
-			A[j] = A[j - 1];
-			j = j - 1;
-		}
-		A[j] = v;
-	}
-}
-
-void insertion_paralelo(int* A, int start, int end) {
-   int i, j, v;
-
-	for (i = start; i <= end; i++) {
-		v = A[i];
-		j = i;
-
-		while ((j > 0) && (A[j - 1] > v)) {
-			A[j] = A[j - 1];
-			j = j - 1;
-		}
-		A[j] = v;
-	}
-}
-
-void divide_array (int* array, int size) {
-	int start, end, total_threads, array_size;
-	
-	#pragma omp parallel shared( total_threads, array_size ) private( start, end ) 
+	for (i = left; i < size; i++) 
 	{
-		int id = omp_get_thread_num();
-		total_threads = omp_get_num_threads();
-		
-		array_size = size/total_threads;
-		
-		start = id*array_size;
-		end = start+array_size-1;
+		v = array[i];
+		j = i;
 
-		if(id == total_threads-1) {
-			insertion_paralelo(array, start, size - 1);
+		while ( (j > left) && (array[j - 1] > v) ) 
+		{
+			array[j] = array[j - 1];
+			j = j - 1;
+		}
+		array[j] = v;
+	}
+}
+
+void insertion_paralelo (int* array, int left, int right ) {
+	int id, start, end, total_threads, array_thread_size;
+	int size = right - left + 1;
+
+	#pragma omp parallel shared( size, total_threads, array_thread_size ) private( start, end ) 
+	{
+		total_threads = omp_get_num_threads();
+		array_thread_size = size / total_threads;
+		
+		int id = omp_get_thread_num();
+		start = id * array_thread_size;
+		end = start + array_thread_size - 1;
+		if(id == total_threads - 1) {
+			printf("Thread %d ordering from %d to %d\n", id, start, size-1);
+			insertion_sequencial( array, start, size - 1 );
 		}
 		else {
-			insertion_paralelo(array, start, end);
+			printf("Thread %d ordering from %d to %d\n", id, start, end);
+			insertion_sequencial( array, start, end );
 		}
 	}
 	
-	insertion_paralelo(array, 0, size - 1);
+	insertion_sequencial( array, 0, size - 1 );
 }
 
 int main(int argc, char const *argv[]) {
@@ -72,7 +61,7 @@ int main(int argc, char const *argv[]) {
 	array = read_int_array( file_name, &size );
 	printf("\nInsertion Sort Sequencial:\nOrdering %d elements\n", (int)size);
 	start = omp_get_wtime();
-	insertion_sequencial(array, size);
+	insertion_sequencial(array, 0, size - 1);
 	end = omp_get_wtime();
 	printf("Elapsed time: %f sec.\n\n", (end-start));
 	free(array);		
@@ -80,12 +69,12 @@ int main(int argc, char const *argv[]) {
 	array = read_int_array( file_name, &size );
 	printf("\nInsertion Sort Paralelizado:\nOrdering %d elements\n", (int)size);
 	start = omp_get_wtime();
-	divide_array(array, size);
+	insertion_paralelo ( array, 0, size - 1 );
 	end = omp_get_wtime();
 	printf("Elapsed time: %f sec.\n\n", (end-start));
 	fast_check_array_is_sorted( file_name, array, size );
 
-	write_file(file_name, size, array);
+	// write_file(file_name, size, array);
 	free(array);	
 
 	exit( EXIT_SUCCESS );
