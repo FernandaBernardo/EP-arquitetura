@@ -83,6 +83,9 @@ int main(int argc, char const *argv[]) {
 	divide_array(array, size);
 	end = omp_get_wtime();
 	printf("Elapsed time: %f sec.\n\n", (end-start));
+	fast_check_array_is_sorted( file_name, array, size );
+
+	write_file(file_name, size, array);
 	free(array);	
 
 	exit( EXIT_SUCCESS );

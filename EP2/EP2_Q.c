@@ -78,28 +78,35 @@ void sequential_quicksort (int* array, int left, int right) {
 
 
 static unsigned int total_threads = 1;	
-static size_t MIN_SIZE = 2000;
+static size_t MIN_SIZE = 2001;
 
 void parallel_quicksort (int* array, int left, int right ) {
 	total_threads++;
 	if ( left < right) {
 		
-		if( total_threads >= omp_get_num_procs() || right - left + 1 < MIN_SIZE) 
+		if( total_threads >= omp_get_num_procs() ) 
 		{	
 			sequential_quicksort( array, left, right );
 		} else {
 			int q = partition_quicksort( array, left, right );
+			int left_size, right_size;
 
-			if ( q - left < MIN_SIZE ) 
+			if ( ( left_size = q - left ) < MIN_SIZE 
+				&& ( right_size = right - q + 2 ) >= MIN_SIZE ) 
 			{
 				sequential_quicksort( array, left, q-1);
 				parallel_quicksort( array, q+1, right );
 
-			} else if( right - q + 2 < MIN_SIZE )
+			} else if( left_size >= MIN_SIZE && right_size < MIN_SIZE )
 			{
 				parallel_quicksort( array, left, q-1);
 				sequential_quicksort( array, q+1, right );
+			} else if ( left_size < MIN_SIZE && right_size < MIN_SIZE )
+			{
+				sequential_quicksort(array, left, q - 1);
+				sequential_quicksort(array, q + 1, right);
 			}
+
 			#pragma omp sections
 			{
 				#pragma omp section
@@ -195,7 +202,6 @@ int main(int argc, char *argv[]) {
 	
 	double sequential_time, parallel_time = 0.0;
 	sequential_time = call_function( "Sequential QuickSort", argv[1], sequential_quicksort, 0 );
-	omp_set_num_threads( 4 );
 	omp_set_nested(1);
 	parallel_time = call_function( "Parallel QuickSort", argv[1], parallel_quicksort, 1 );
 

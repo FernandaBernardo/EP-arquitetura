@@ -241,7 +241,7 @@ void fast_check_array_is_sorted(const char *file_name, int* array, size_t size){
 
 	a_sequential_quicksort( original_array, 0, original_size - 1 );
 
-	int i, unordered = 0;
+	int i, repeated, unordered = 0;
 	#pragma omp parallel for private(i)
 	for (i = 0; i < size; i++) {
 		if( original_array[i] != array[i] ){
@@ -249,9 +249,23 @@ void fast_check_array_is_sorted(const char *file_name, int* array, size_t size){
 		}
 	}
 
+	if( ! unordered )
+	{
+		repeated = 0;
+		#pragma omp parallel for private(i)
+		for( i = 1 ; i < size; i++)
+	 	{
+			if( array[ i-1 ] == array[ i ])
+			{
+				repeated = 1;
+			}
+		}
+	}
+
 	printf("Sanity test: sort checking has ended.\n");
 	if( ! unordered ) printf("Sanity test: SUCCESS - array IS sorted\n");
 	else printf("Sanity test: FAIL - array is NOT sorted. There are %d elements wrongly positioned.\n", unordered);
+	if( repeated ) printf("Sanity test: BUT IT HAS REPEATED NUMBERS!\n");
 	printf("Elapsed time testing: %f sec.\n", omp_get_wtime() - start );
 
 }
