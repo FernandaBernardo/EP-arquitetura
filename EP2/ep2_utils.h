@@ -141,6 +141,16 @@ int* read_int_array( const char*  nome_arquivo, size_t* size ) {
 	return array;
 }
 
+void write_file (const char* nome_arquivo, size_t size,int* array) {
+	FILE* saida = fopen(nome_arquivo, "a");
+	fseek(saida, 0, SEEK_END);
+	int i;
+	for (i = 0; i < size; ++i){
+		fprintf(saida, "\n%d",array[i]);
+	}
+	fclose(saida);
+}
+
 /* 
 Testa se o array do argumento está ordenado de forma crescente. 
 O teste tem complexidade de O(n^2), então é bem custoso para arrays grandes.
